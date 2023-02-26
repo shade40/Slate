@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import cached_property
 from shutil import get_terminal_size
-from typing import Generator, TextIO
+from typing import Generator, TextIO, Iterable
 
 from .core import (
     BEGIN_SYNCHRONIZED_UPDATE,
@@ -196,14 +196,15 @@ class Terminal:
 
     def write(
         self,
-        span: Span,
+        data: Iteratable[Span] | str,
         cursor: tuple[int, int] | None = None,
         force_overwrite: bool = False,
     ) -> int:
         """Writes a span to the screen at the given cursor position.
 
         Args:
-            spans: The span object to write.
+            data: The data to write. If passed as a string, `Span.yield_from` is used
+                to get a generator of `Span` objects.
             cursor: The location of the screen to start writing at, anchored to the
                 top-left. If not given, the screen's last used cursor is used.
             force_overwrite: If set, each of the characters written will be registered
@@ -213,8 +214,11 @@ class Terminal:
             The number of cells that have been updated as a result of the write.
         """
 
+        if isinstance(data, str):
+            data = Span.yield_from(data)
+
         changes = self._screen.write(
-            [span], cursor=cursor, force_overwrite=force_overwrite
+            data, cursor=cursor, force_overwrite=force_overwrite
         )
 
         return changes

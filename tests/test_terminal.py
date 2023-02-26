@@ -19,7 +19,7 @@ def test_terminal_colors_match_length():
 def test_terminal_clear():
     term = Terminal()
 
-    term.write(Span("X"), cursor=(0, 0))
+    term.write("X", cursor=(0, 0))
     term.clear(fillchar="O")
     assert term._screen._cells[0][0] == "O"
 
@@ -42,7 +42,7 @@ def test_terminal_draw():
     term.draw()
 
     term.stream = stream = StringIO()
-    term.write(Span("I am terminal"))
+    term.write("I am terminal")
 
     term.draw()
     assert stream.getvalue() == "\x1b[1;1HI am terminal\x1b[0m", repr(stream.getvalue())
@@ -60,8 +60,33 @@ def test_terminal_cursor():
 
     assert term.cursor == (0, 0)
 
-    term.write(Span("1234"))
+    term.write("1234")
     assert term.cursor == (4, 0)
 
     term.cursor = (1, 1)
     assert term.cursor == (1, 1)
+
+
+def test_terminal_write_diff_types():
+    term = Terminal()
+
+    term._screen.render()
+    term.write("\x1b[38;5;141;1;2mHello")
+
+    assert term._screen._cells[0][0:5] == [
+        "\x1b[38;5;141;1;2mH",
+        "e",
+        "l",
+        "l",
+        "o\x1b[0m",
+    ]
+
+    changes = term.write(
+        [Span("Yellow", foreground="38;5;141", bold=True, dim=True)], cursor=(0, 0)
+    )
+
+    # 3 changes:
+    # - "H"        -> "Y"
+    # - "o\x1b[0m" -> "o"
+    # - " "        -> "w"
+    assert changes == 3
