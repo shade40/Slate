@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from typing import Iterator
+from typing import Iterable
 
 from .span import Span
 
@@ -20,12 +19,12 @@ class Screen:
         cursor: tuple[int, int] = (0, 0),
         fillchar: str = " ",
     ) -> None:
-        self._cells: list[list[Span]] = []
+        self._cells: list[list[str]] = []
+        self._change_buffer: list[tuple[tuple[int, int], str]] = []
+
         self.cursor: tuple[int, int] = cursor
 
         self.resize((width, height), fillchar)
-
-        self._change_buffer: list[tuple[tuple[int, int], str]] = []
 
     def resize(self, size: tuple[int, int], fillchar: str = " ") -> None:
         """Resizes the cell matrix to a new size.
@@ -39,8 +38,14 @@ class Screen:
 
         self._cells = []
 
-        for _ in range(height):
-            self._cells.append([Span(fillchar)] * width)
+        for y in range(height):
+            row = []
+
+            for x in range(width):
+                row.append(fillchar)
+                self._change_buffer.append(((x, y), fillchar))
+
+            self._cells.append(row)
 
         for y, row in enumerate(old_cells):
             if y >= height:
@@ -63,11 +68,11 @@ class Screen:
         """
 
         self._cells.clear()
-        self.resize((self.width, self.height))
+        self.resize((self.width, self.height), fillchar=fillchar)
 
     def write(
         self,
-        spans: Iterator[Span],
+        spans: Iterable[Span],
         cursor: tuple[int, int] | None = None,
         force_overwrite: bool = False,
     ) -> int:
@@ -99,7 +104,7 @@ class Screen:
                     next_y += 1
                     next_x = 0
 
-                if self._cells[y][x] != char:
+                if force_overwrite or self._cells[y][x] != char:
                     self._cells[y][x] = char
                     self._change_buffer.append(((x, y), char))
 
@@ -118,11 +123,13 @@ class Screen:
             origin: The offset to apply to all positions.
         """
 
+        x, y = origin
         if redraw:
-            buffer = "\x1b[2J\x1b[H"
+            buffer = "\x1b[2J"
 
             for row in self._cells:
-                buffer += "".join(map(str, row)) + "\n"
+                buffer += f"\x1b[{y};{x}H" + "".join(map(str, row))
+                y += 1
 
             return buffer
 
@@ -145,4 +152,7 @@ class Screen:
 
         self._change_buffer = []
 
-        return buffer + "\x1b[0m"
+        if not buffer.endswith("\x1b[0m"):
+            buffer += "\x1b[0m"
+
+        return buffer

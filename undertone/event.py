@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Callable
 
 from dataclasses import dataclass, field
@@ -9,12 +11,18 @@ class CallbackError(Exception):
 
 @dataclass
 class Event:
+    """An emittable event.
+
+    Construct an event and store it in a variable to have a reference for it. Then, you
+    can `+=` callback handlers onto it, and call the event object with data to notify
+    all of the callbacks.
+    """
+
     name: str
-    bound: object
 
     _listeners: list[Callable[[Any], Any]] = field(default_factory=list)
 
-    def __iadd__(self, callback: Any) -> None:
+    def __iadd__(self, callback: Any) -> Event:
         if not callable(callback):
             raise ValueError(f"Invalid type for callback: {callback}")
 

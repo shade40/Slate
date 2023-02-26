@@ -5,7 +5,7 @@ import re
 from copy import deepcopy
 from dataclasses import dataclass, field, fields
 from itertools import chain
-from typing import Any
+from typing import Any, Generator
 
 SETTERS = {
     "bold": "1",
@@ -21,15 +21,34 @@ SETTERS = {
 
 SETTERS_TO_STYLES = {value: key for key, value in SETTERS.items()}
 
-UNSETTERS = {}
+UNSETTERS = {
+    "dim": "22",
+    "bold": "22",
+    "italic": "23",
+    "underline": "24",
+    "blink": "25",
+    "blink2": "26",
+    "inverse": "27",
+    "invisible": "28",
+    "strikethrough": "29",
+    "foreground": "39",
+    "background": "49",
+    "overline": "54",
+}
 
-UNSETTERS_TO_STYLES = {value: key for key, value in SETTERS.items()}
+UNSETTERS_TO_STYLES = {value: key for key, value in UNSETTERS.items()}
 
 RE_ANSI_STYLES = re.compile(r"\x1b\[(?:(.*?))[mH]([^\x1b]+)(?=\x1b)")
 
 
 @dataclass(frozen=True)
 class Span:  # pylint: disable=too-many-instance-attributes
+    """A class to represent a piece of styled text.
+
+    Note that spans are immutable, so to get new versions of an existing span you can
+    use one of the `as_{style_name}` methods, or the more raw `mutate`.
+    """
+
     text: str
 
     foreground: str = ""
@@ -47,6 +66,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
     reset_after: bool = True
 
     _computed: str = field(init=False)
+    _sequences: str = field(init=False)
 
     def __post_init__(self) -> None:
         sequences = self._generate_sequences()
@@ -104,7 +124,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
             if body.isdigit():
                 index = int(body)
 
-                if 30 <= index <= 49 and index != 48:
+                if 30 <= index <= 49 and index not in [38, 48]:
                     return True
 
                 if 90 <= index <= 97 or 100 <= index <= 107:
@@ -112,37 +132,35 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
                 return False
 
-            if not body.startswith(("38", "48")):
-                return False
-
+            # Body will always start with 38 or 48, since it is guaranteed by the caller
             parts = body.split(";")
 
             if parts[1] == "2":
-                return len(parts == 5)
+                return len(parts) == 5
 
             if parts[1] == "5":
                 return len(parts) == 3
 
             return False
 
-        def _parse_sequence(seq: str) -> dict[str, bool]:
+        def _parse_sequence(
+            seq: str, options: dict[str, bool | str]
+        ) -> dict[str, bool | str]:
             """Parses the given sequence into a option-dict."""
-
-            options: dict[str, bool] = {}
-            colors: list[str] = []
 
             in_color = False
             color_buffer = ""
 
             for part in seq.split(";"):
-                if part.isdigit() and int(part) in chain(range(30, 48), range(90, 108)):
+                if (
+                    part.isdigit()
+                    and int(part) in chain(range(30, 49), range(90, 108))
+                    and part not in ["39", "49"]
+                ):
                     in_color = True
-                    color_buffer += part
-
-                    continue
 
                 if in_color:
-                    color_buffer += ";" + part
+                    color_buffer += part
 
                     if _is_valid_color(color_buffer):
                         key = (
@@ -154,6 +172,9 @@ class Span:  # pylint: disable=too-many-instance-attributes
                         color_buffer = ""
                         in_color = False
 
+                    else:
+                        color_buffer += ";"
+
                     continue
 
                 if part in SETTERS_TO_STYLES:
@@ -161,22 +182,38 @@ class Span:  # pylint: disable=too-many-instance-attributes
                     continue
 
                 if part in UNSETTERS_TO_STYLES:
-                    options[UNSETTERS_TO_STYLES[part]] = False
+                    key = UNSETTERS_TO_STYLES[part]
+
+                    if key in ["foreground", "background"]:
+                        options[key] = ""
+
+                    else:
+                        options[key] = False
+
+                        # Not sure why this is said to not be covered.
+                        if key == "bold":  # no-cov
+                            options["dim"] = False
+
                     continue
 
                 raise ValueError(f"Could not parse {part}.")
 
             return options
 
+        # Add trailing ESC char to allow detection by regex
+        if not line.endswith("\x1b"):
+            line += "\x1b"
+
+        options: dict[str, bool | str] = {}
         for mtch in RE_ANSI_STYLES.finditer(line):
             sequence, plain = mtch.groups()
 
-            options = _parse_sequence(sequence)
+            _parse_sequence(sequence, options)
 
-            yield Span(plain, **options)
+            yield Span(plain, **options)  # type: ignore
 
     def get_characters(
-        self, always_include_sequence=False
+        self, always_include_sequence: bool = False
     ) -> Generator[str, None, None]:
         """Splits the Span into its characters.
 
@@ -195,10 +232,15 @@ class Span:  # pylint: disable=too-many-instance-attributes
             if not always_include_sequence:
                 remaining_sequences = ""
 
-        yield remaining_sequences + self.text[-1] + "\x1b[0m"
+        last = self.text[-1]
 
-    def mutate(self, **options: Any) -> Styled:
-        """Creates a new Styled object, mutated with the given options."""
+        if self._sequences != "" and self.reset_after:
+            last = remaining_sequences + last + "\x1b[0m"
+
+        yield last
+
+    def mutate(self, **options: Any) -> Span:
+        """Creates a new Span object, mutated with the given options."""
 
         config = deepcopy(self.__dict__)
         del config["_computed"]
@@ -208,8 +250,8 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         return self.__class__(**config)
 
-    def as_color(self, color: Any) -> Styled:
-        """Returns a mutated Styled object with the given color."""
+    def as_color(self, color: Any) -> Span:
+        """Returns a mutated Span object with the given color."""
 
         body = str(color)
 
@@ -218,48 +260,48 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         return self.mutate(foreground=body)
 
-    def as_bold(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `bold` set to the given value."""
+    def as_bold(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `bold` set to the given value."""
 
         return self.mutate(bold=value)
 
-    def as_dim(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `dim` set to the given value."""
+    def as_dim(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `dim` set to the given value."""
 
         return self.mutate(dim=value)
 
-    def as_italic(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `italic` set to the given value."""
+    def as_italic(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `italic` set to the given value."""
 
         return self.mutate(italic=value)
 
-    def as_underline(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `underline` set to the given value."""
+    def as_underline(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `underline` set to the given value."""
 
         return self.mutate(underline=value)
 
-    def as_blink(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `blink` set to the given value."""
+    def as_blink(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `blink` set to the given value."""
 
         return self.mutate(blink=value)
 
-    def as_fast_blink(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `fast_blink` set to the given value."""
+    def as_fast_blink(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `fast_blink` set to the given value."""
 
         return self.mutate(fast_blink=value)
 
-    def as_invert(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `invert` set to the given value."""
+    def as_invert(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `invert` set to the given value."""
 
         return self.mutate(invert=value)
 
-    def as_conceal(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `conceal` set to the given value."""
+    def as_conceal(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `conceal` set to the given value."""
 
         return self.mutate(conceal=value)
 
-    def as_strike(self, value: bool = True) -> Styled:
-        """Returns a mutated Styled object, with `strike` set to the given value."""
+    def as_strike(self, value: bool = True) -> Span:
+        """Returns a mutated Span object, with `strike` set to the given value."""
 
         return self.mutate(strike=value)
 

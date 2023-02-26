@@ -38,11 +38,12 @@ dependencies = [
   "pytest-cov",
 ]
 [tool.hatch.envs.default.scripts]
-cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=undertone --cov=tests"
-no-cov = "cov --no-cov"
+test = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=undertone --cov=tests && coverage html"
+lint = "pylint undertone"
+type = "mypy undertone"
 
 [[tool.hatch.envs.test.matrix]]
-python = ["37", "38", "39", "310", "311"]
+python = ["38", "39", "310", "311"]
 
 [tool.coverage.run]
 branch = true
@@ -53,7 +54,8 @@ omit = [
 
 [tool.coverage.report]
 exclude_lines = [
-  "no cov",
+  "no-cov",
+  "if os.name == \"nt\"",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
@@ -62,6 +64,7 @@ exclude_lines = [
 strict = true
 
 [tool.pylint]
+fail-under = 9.9
 disable = "fixme"
 good-names = ["i", "j", "k", "ex", "Run", "_", "x" ,"y", "fd"]
 

@@ -5,7 +5,6 @@ import sys
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import cached_property
-from io import StringIO
 from shutil import get_terminal_size
 from typing import Generator, TextIO
 
@@ -18,7 +17,6 @@ from .core import (
     SHOW_CURSOR,
     START_ALT_BUFFER,
     ColorSpace,
-    Position,
     get_color_space,
     get_default_color,
     getch_timeout,
@@ -41,24 +39,34 @@ class Terminal:
     on_resize: Event = field(init=False)
     _screen: Screen = field(init=False)
     _previous_size: tuple[int, int] | None = None
+    _forced_color_space: ColorSpace | None = None
 
     def __post_init__(self) -> None:
         self._screen = Screen(*self.size)
 
-        self.on_resize = Event("Resize", bound=self)
+        self.on_resize = Event("Resize")
         self.on_resize += self._screen.resize
 
-    @cached_property
+    @property
     def color_space(self) -> ColorSpace:
         """Returns the best color space available on the system.
 
         If `NO_COLOR` is set, ColorSpace.NO_COLOR is returned.
         """
 
+        if self._forced_color_space is not None:
+            return self._forced_color_space
+
         return get_color_space()
 
+    @color_space.setter
+    def color_space(self, new: ColorSpace | None) -> None:
+        """Overrides the queried color space setting."""
+
+        self._forced_color_space = new
+
     @cached_property
-    def supports_synchronized_update(self) -> bool:
+    def supports_synchronized_update(self) -> bool:  # no-cov
         """Queries whether this terminal supports synchronized output.
 
         https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036
@@ -97,7 +105,7 @@ class Terminal:
         return self.size[1]
 
     @property
-    def isatty(self) -> bool:
+    def isatty(self) -> bool:  # no-cov
         """Returns whether this terminal represents a TTY."""
 
         try:
@@ -108,7 +116,7 @@ class Terminal:
             return False
 
     @property
-    def resolution(self) -> tuple[int, int]:
+    def resolution(self) -> tuple[int, int]:  # no-cov
         """Gets the pixel resolution of the terminal.
 
         Arguments:
@@ -159,7 +167,7 @@ class Terminal:
 
         return get_default_color("11", stream=self.stream)
 
-    def show_cursor(self, value: bool = True) -> None:
+    def show_cursor(self, value: bool = True) -> None:  # no-cov
         """Shows or hides the terminal's cursor."""
 
         if value:
@@ -168,7 +176,7 @@ class Terminal:
         else:
             self.write_control(HIDE_CURSOR)
 
-    def set_report_mouse(self, value: bool = True) -> None:
+    def set_report_mouse(self, value: bool = True) -> None:  # no-cov
         """Starts or stops listening to SGR 1006 mouse events."""
 
         if value:
@@ -191,7 +199,7 @@ class Terminal:
         span: Span,
         cursor: tuple[int, int] | None = None,
         force_overwrite: bool = False,
-    ) -> None:
+    ) -> int:
         """Writes a span to the screen at the given cursor position.
 
         Args:
@@ -223,7 +231,7 @@ class Terminal:
 
         self.stream.write(sequence)
 
-        if flush:
+        if flush:  # no-cov
             self.stream.flush()
 
     def draw(self, redraw: bool = False) -> None:
@@ -238,7 +246,9 @@ class Terminal:
         self.stream.flush()
 
     @contextmanager
-    def alt_buffer(self, hide_cursor: bool = True) -> Generator[None, None, None]:
+    def alt_buffer(
+        self, hide_cursor: bool = True
+    ) -> Generator[None, None, None]:  # no-cov
         """Manages an alternate buffer in the terminal."""
 
         try:
@@ -270,7 +280,7 @@ class Terminal:
     #         self.write(buffer.getvalue(), offset=offset, flush=flush)
 
     @contextmanager
-    def report_mouse(self) -> Generator[None, None, None]:
+    def report_mouse(self) -> Generator[None, None, None]:  # no-cov
         """Sets mouse reporting for the duration of the context manager."""
 
         try:
@@ -281,7 +291,7 @@ class Terminal:
             self.set_report_mouse(False)
 
     @contextmanager
-    def batch(self) -> Generator[None, None, None]:
+    def batch(self) -> Generator[None, None, None]:  # no-cov
         """A context within which every `write` is batched into one draw call.
 
         This implements the [synchronized update]

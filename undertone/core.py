@@ -6,7 +6,6 @@ import signal
 import sys
 from codecs import getincrementaldecoder
 from contextlib import contextmanager
-from dataclasses import dataclass
 from enum import Enum
 from select import select
 from typing import IO, Any, AnyStr, Generator, Literal, TextIO
@@ -20,7 +19,7 @@ except ImportError:
     import termios
     import tty
 
-    if os.name != "posix":
+    if os.name != "posix":  # no-cov
         raise NotImplementedError(f"Platform {os.name!r} is not supported.") from None
 
 __all__ = [
@@ -29,7 +28,6 @@ __all__ = [
     "getch_timeout",
     "get_default_color",
     "get_color_space",
-    "Position",
     "set_echo",
     "timeout",
 ]
@@ -69,31 +67,6 @@ RE_PALETTE_REPLY = re.compile(
 DEFAULT_COLOR_DEFAULTS = {"10": "dedede", "11": "141414"}
 
 
-@dataclass
-class Position:
-    """A class to store X-Y position information."""
-
-    x: int = 0
-    y: int = 0
-
-    def __iter__(self) -> Iterator[int]:
-        return iter([self.x, self.y])
-
-    def __getitem__(self, sli: slice) -> int:
-        return list(iter(self))[sli]
-
-    def __iadd__(self, other: Any) -> Position:
-        """Allows adding positions with other positions or tuples."""
-
-        if not isinstance(other, (Position, tuple)):
-            raise TypeError(f"Cannot add type {type(other)!r} to a position.")
-
-        self.x += other[0]
-        self.y += other[1]
-
-        return self
-
-
 class ColorSpace(Enum):
     """The color space supported by the terminal."""
 
@@ -110,7 +83,9 @@ class ColorSpace(Enum):
     """Full RGB color support is available."""
 
 
-def get_default_color(layer: Literal["10", "11"], stream: TextIO = sys.stdout) -> str:
+def get_default_color(
+    layer: Literal["10", "11"], stream: TextIO = sys.stdout
+) -> str:  # no-cov
     """Gets the default fore or back color for the terminal attached to the stream.
 
     Args:
@@ -132,6 +107,7 @@ def get_default_color(layer: Literal["10", "11"], stream: TextIO = sys.stdout) -
 
     mtch = RE_PALETTE_REPLY.match(reply)
     if mtch is None:
+        print(layer)
         return DEFAULT_COLOR_DEFAULTS[layer]
 
     _, red, green, blue = mtch.groups()
@@ -199,7 +175,7 @@ def parse_mouse_event(code: str) -> str | None:
     return f"mouse:{event_name}@{posx};{posy}"
 
 
-def _is_ready(file: IO[AnyStr]) -> bool:
+def _is_ready(file: IO[AnyStr]) -> bool:  # no-cov
     """Determines if IO object is reading to read.
 
     Args:
@@ -215,7 +191,7 @@ def _is_ready(file: IO[AnyStr]) -> bool:
 
 
 @contextmanager
-def timeout(duration: float) -> Generator[None, None, None]:
+def timeout(duration: float) -> Generator[None, None, None]:  # no-cov
     """Allows context to run for a certain amount of time, quits it once it's up.
 
     Note that this should never be run on Windows, as the required signals are not
@@ -244,7 +220,7 @@ def timeout(duration: float) -> Generator[None, None, None]:
 
 def _getch_posix(  # pylint: disable=used-before-assignment
     stream: TextIO = sys.stdin,
-) -> str:
+) -> str:  # no-cov
     """Implementation for getting characters on POSIX systems.
 
     Args:
@@ -296,7 +272,7 @@ def _getch_posix(  # pylint: disable=used-before-assignment
     return buff
 
 
-def _getch_nt() -> str:
+def _getch_nt() -> str:  # no-cov
     """Implementation for getting characters on NT systems.
 
     Returns:
@@ -331,7 +307,7 @@ def _getch_nt() -> str:
     return buff
 
 
-def getch(stream: TextIO = sys.stdin, raw: bool = False) -> str:
+def getch(stream: TextIO = sys.stdin, raw: bool = False) -> str:  # no-cov
     """Gets characters from the stream, without blocking.
 
     The implementation is different on POSIX and NT systems, and this method
@@ -378,7 +354,7 @@ def getch_timeout(
     default: str | None = None,
     stream: TextIO = sys.stdin,
     raw: bool = False,
-) -> str:
+) -> str:  # no-cov
     """Calls `getch` with a system timeout.
 
     Note that this on Windows this will call `getch` normally, as `SIGALRM` is not
@@ -408,7 +384,7 @@ def getch_timeout(
     return default
 
 
-def set_echo(value: bool = True, stream: TextIO = sys.stdin) -> None:
+def set_echo(value: bool = True) -> None:  # no-cov
     """Sets the terminal's ECHO flag to the given value.
 
     Currently not supported on windows.
