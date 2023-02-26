@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import pytest
 
 from undertone import Span
@@ -36,6 +38,11 @@ def test_span_foreground_background_guess():
 def test_span_yield_from():
     def _equals(line: str, expected: list[Span]) -> bool:
         return list(Span.yield_from(line)) == expected
+
+    assert _equals(
+        "Test empty",
+        [Span("Test empty")],
+    )
 
     assert _equals(
         "\x1b[38;5;141;1;2mTest\x1b",

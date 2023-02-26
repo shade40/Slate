@@ -205,12 +205,20 @@ class Span:  # pylint: disable=too-many-instance-attributes
             line += "\x1b"
 
         options: dict[str, bool | str] = {}
+
+        index = 0
         for mtch in RE_ANSI_STYLES.finditer(line):
+            index = mtch.end()
             sequence, plain = mtch.groups()
 
             _parse_sequence(sequence, options)
 
             yield Span(plain, **options)  # type: ignore
+
+        line = line.rstrip("\x1b")
+
+        if index < len(line):
+            yield Span(line[index:])
 
     def get_characters(
         self, always_include_sequence: bool = False

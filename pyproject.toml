@@ -55,6 +55,7 @@ omit = [
 [tool.coverage.report]
 exclude_lines = [
   "no-cov",
+  "def __repr__",
   "if os.name == \"nt\"",
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
