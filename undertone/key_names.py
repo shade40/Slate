@@ -1,3 +1,5 @@
+"""Dictionaries of key translations, used by `getch` and friends."""
+
 POSIX_KEY_NAMES = {
     "\x1b[A": "up",
     "\x1b[B": "down",

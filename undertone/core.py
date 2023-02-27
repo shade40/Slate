@@ -1,3 +1,8 @@
+"""A set of non-object specific terminal API implementations.
+
+Most of these are best used from the `Terminal` object.
+"""
+
 from __future__ import annotations
 
 import os

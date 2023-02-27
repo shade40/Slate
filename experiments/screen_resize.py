@@ -1,7 +1,6 @@
-from undertone import Terminal, set_echo, Span, getch
+from undertone import Span, Terminal, getch, set_echo
 
 from .markup import styled_from_markup as markup
-
 
 term = Terminal()
 

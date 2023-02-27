@@ -1,4 +1,5 @@
-"""Terminal drawing mode setters."""
+"""The Span class, a piece of formatted text for the terminal."""
+
 from __future__ import annotations
 
 import re

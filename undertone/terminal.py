@@ -1,3 +1,5 @@
+"""The Terminal class, which is the primary surface to interact with the emulator."""
+
 from __future__ import annotations
 
 import re
@@ -6,7 +8,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass, field
 from functools import cached_property
 from shutil import get_terminal_size
-from typing import Generator, TextIO, Iterable
+from typing import Generator, Iterable, TextIO
 
 from .core import (
     BEGIN_SYNCHRONIZED_UPDATE,

@@ -1,8 +1,9 @@
+"""The basic Event class used by the rest of the library."""
+
 from __future__ import annotations
 
-from typing import Any, Callable
-
 from dataclasses import dataclass, field
+from typing import Any, Callable
 
 
 class CallbackError(Exception):

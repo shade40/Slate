@@ -1,7 +1,7 @@
 import time
 from random import randint
 
-from undertone import Terminal, set_echo, Span, getch_timeout
+from undertone import Span, Terminal, getch_timeout, set_echo
 from undertone.screen import Screen
 
 from .markup import styled_from_markup as markup

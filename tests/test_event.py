@@ -1,5 +1,6 @@
 import pytest
-from undertone.event import Event, CallbackError
+
+from undertone.event import CallbackError, Event
 
 
 def test_event_emit():

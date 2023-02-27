@@ -39,7 +39,7 @@ def test_screen_write():
 def test_screen_render():
     screen = Screen(5, 5, fillchar="X")
 
-    assert screen.render() == (
+    assert (output := screen.render()) == (
         "\x1b[0;0HXXXXX"
         + "\x1b[1;0HXXXXX"
         + "\x1b[2;0HXXXXX"
@@ -52,6 +52,7 @@ def test_screen_render():
     assert screen.render() == "\x1b[4;4H\x1b[1mX\x1b[0m"
 
     output = screen.render(origin=(1, 1), redraw=True)
+
     assert output == (
         "\x1b[1;1HXXXXX"
         + "\x1b[2;1HXXXXX"

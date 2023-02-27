@@ -1,3 +1,5 @@
+"""The Screen class, which allows for smart overwrite-based terminal drawing."""
+
 from __future__ import annotations
 
 from typing import Iterable
