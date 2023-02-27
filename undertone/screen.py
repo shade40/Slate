@@ -125,15 +125,16 @@ class Screen:
 
         x, y = origin
         if redraw:
-            buffer = "\x1b[2J"
+            buffer = ""
 
             for row in self._cells:
                 buffer += f"\x1b[{y};{x}H" + "".join(map(str, row))
                 y += 1
 
+            self._change_buffer.clear()
+
             return buffer
 
-        buffer = f"{self._change_buffer}"
         buffer = ""
 
         previous_x = None
@@ -150,7 +151,7 @@ class Screen:
 
             previous_x, previous_y = x, y
 
-        self._change_buffer = []
+        self._change_buffer.clear()
 
         if not buffer.endswith("\x1b[0m"):
             buffer += "\x1b[0m"

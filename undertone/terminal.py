@@ -196,7 +196,7 @@ class Terminal:
 
     def write(
         self,
-        data: Iteratable[Span] | str,
+        data: Iterable[Span] | str,
         cursor: tuple[int, int] | None = None,
         force_overwrite: bool = False,
     ) -> int:

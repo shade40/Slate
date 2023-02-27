@@ -53,8 +53,7 @@ def test_screen_render():
 
     output = screen.render(origin=(1, 1), redraw=True)
     assert output == (
-        "\x1b[2J"
-        + "\x1b[1;1HXXXXX"
+        "\x1b[1;1HXXXXX"
         + "\x1b[2;1HXXXXX"
         + "\x1b[3;1HXXXXX"
         + "\x1b[4;1HXXXXX"

@@ -1,7 +1,7 @@
 import time
 from random import randint
 
-from undertone import Terminal, set_echo, Span, getch
+from undertone import Terminal, set_echo, Span, getch_timeout
 from undertone.screen import Screen
 
 from .markup import styled_from_markup as markup
@@ -9,6 +9,9 @@ from .screen_resize import redraw
 
 if __name__ == "__main__":
     term = Terminal()
+
+    def redraw(size: tuple[int, int]) -> None:
+        term.draw(redraw=True)
 
     term.on_resize += redraw
 
@@ -27,17 +30,16 @@ if __name__ == "__main__":
                 width, height = term.size
 
                 start = time.perf_counter_ns()
-                for _ in range(100):
+                for _ in range(1):
                     position = randint(0, width - 1), randint(0, height - 2)
                     color = randint(0, 255)
 
-                    for span in markup(f"[@{color}] "):
-                        changes += term.write(span, cursor=position)
+                    changes += term.write(markup(f"[@{color}] "), cursor=position)
 
                 write_time += time.perf_counter_ns() - start
                 writes += 1
 
-                term.write(Span(f" Changes: {changes} "), cursor=(0, 0))
+                term.write(f" Changes: {changes} ", cursor=(0, 0))
 
                 start = time.perf_counter_ns()
                 term.draw()

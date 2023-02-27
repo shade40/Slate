@@ -23,8 +23,7 @@ if __name__ == "__main__":
                 color1 = f"{int(x / width * 256)};{int(y / height * 256)};0"
                 color2 = f"{int(x / width * 256)};{int((y + 0.5) / height * 256)};0"
 
-                for span in markup(f"[@{color1} {color2}]▄"):
-                    term.write(span, cursor=(x, y))
+                term.write(markup(f"[@{color1} {color2}]▄"), cursor=(x, y))
 
         while True:
             # Resize is detected manually, so we need to query for the size.
