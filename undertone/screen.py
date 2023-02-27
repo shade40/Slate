@@ -5,6 +5,46 @@ from typing import Iterable
 from .span import Span
 
 
+class ChangeBuffer:
+    """A simple class to allow for no-duplicate double buffering.
+
+    Creating a custom class that uses setattr is a bit better than using dicts or
+    filtering, as they either have performance overheads or involve cumbersome resizing.
+    """
+
+    def __setitem__(self, indices: tuple[int, int], value: str) -> None:
+        setattr(self, f"_item_{'_'.join(map(str, indices))}", value)
+
+    def _get_items(self) -> Iterable[str]:
+        """Gets a list of custom-set attributes."""
+
+        return filter(lambda item: item.startswith("_item_"), dir(self))
+
+    def clear(self) -> None:
+        """Clears the buffer."""
+
+        for attr in self._get_items():
+            delattr(self, attr)
+
+    def gather(self) -> list[tuple[tuple[int, int], str]]:
+        """Gathers all changes.
+
+        Returns:
+            A list of items in the format:
+
+                (x, y), changed_str
+
+        """
+
+        items: list[tuple[tuple[int, int], str]] = []
+
+        for attr in self._get_items():
+            x, y = map(int, attr.lstrip("_item_").split("_"))
+            items.append(((x, y), getattr(self, attr)))
+
+        return sorted(items, key=lambda item: (item[0][1], item[0][0]))
+
+
 class Screen:
     """A matrix of cells that represents a 'screen'.
 
@@ -20,7 +60,7 @@ class Screen:
         fillchar: str = " ",
     ) -> None:
         self._cells: list[list[str]] = []
-        self._change_buffer: list[tuple[tuple[int, int], str]] = []
+        self._change_buffer = ChangeBuffer()
 
         self.cursor: tuple[int, int] = cursor
 
@@ -43,7 +83,7 @@ class Screen:
 
             for x in range(width):
                 row.append(fillchar)
-                self._change_buffer.append(((x, y), fillchar))
+                self._change_buffer[x, y] = fillchar
 
             self._cells.append(row)
 
@@ -106,7 +146,7 @@ class Screen:
 
                 if force_overwrite or self._cells[y][x] != char:
                     self._cells[y][x] = char
-                    self._change_buffer.append(((x, y), char))
+                    self._change_buffer[x, y] = char
 
                     changes += 1
 
@@ -140,7 +180,7 @@ class Screen:
         previous_x = None
         previous_y = None
 
-        for ((x, y), char) in self._change_buffer:
+        for ((x, y), char) in self._change_buffer.gather():
             x += origin[0]
             y += origin[1]
 
