@@ -78,6 +78,23 @@ class Span:  # pylint: disable=too-many-instance-attributes
     def __str__(self) -> str:
         return self._computed
 
+    def __repr__(self) -> str:
+        name = type(self).__name__
+
+        attributes = f"{self.text!r}, "
+        truthy_fields = (
+            field.name for field in fields(self) if getattr(self, field.name) is True
+        )
+        attributes += ", ".join(f"{name}=True" for name in truthy_fields)
+
+        if self.foreground != "":
+            attributes += f", foreground={self.foreground!r}"
+
+        if self.background != "":
+            attributes += f", background={self.background!r}"
+
+        return f"{name}({attributes})"
+
     @staticmethod
     def _is_background_color(body: str) -> bool:
         """Determines whether the given color body is a background.
