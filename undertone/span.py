@@ -330,8 +330,3 @@ class Span:  # pylint: disable=too-many-instance-attributes
         """Returns a mutated Span object, with `strike` set to the given value."""
 
         return self.mutate(strike=value)
-
-
-if __name__ == "__main__":
-    print(*Span.yield_from("\x1b[38;5;141;1mTest\x1b[7mInvert\x1b[0m"))
-    print(list(Span("test", foreground="75", bold=True, italic=True).get_characters()))

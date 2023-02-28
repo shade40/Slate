@@ -30,11 +30,14 @@ if __name__ == "__main__":
                 width, height = term.size
 
                 start = time.perf_counter_ns()
-                for _ in range(1):
+                for _ in range(1000):
                     position = randint(0, width - 1), randint(0, height - 2)
-                    color = randint(0, 255)
+                    color1 = randint(0, 255)
+                    color2 = randint(0, 255)
 
-                    changes += term.write(markup(f"[@{color}] "), cursor=position)
+                    changes += term.write(
+                        markup(f"[@{color1} {color2}]▄"), cursor=position
+                    )
 
                 write_time += time.perf_counter_ns() - start
                 writes += 1
