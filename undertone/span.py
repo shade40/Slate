@@ -96,6 +96,16 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         return f"{name}({attributes})"
 
+    @property
+    def attrs(self) -> None:
+        """Returns a copy of the atttributes that define this span."""
+
+        attrs = deepcopy(self.__dict__)
+        del attrs["_computed"]
+        del attrs["_sequences"]
+
+        return attrs
+
     @staticmethod
     def _is_background_color(body: str) -> bool:
         """Determines whether the given color body is a background.
