@@ -21,6 +21,10 @@ def test_span_mutation():
     assert str(Span("invert").as_invert()) == "\x1b[7minvert\x1b[0m"
     assert str(Span("conceal").as_conceal()) == "\x1b[8mconceal\x1b[0m"
     assert str(Span("strike").as_strike()) == "\x1b[9mstrike\x1b[0m"
+    assert (
+        str(Span("hyperlink").as_hyperlink("https://google.com"))
+        == "\x1b]8;;https://google.com\x1b\\hyperlink\x1b]8;;\x1b\\"
+    )
 
     assert str(Span("red").as_color("31")) == "\x1b[31mred\x1b[0m"
     assert str(Span("green").as_color("41")) == "\x1b[41mgreen\x1b[0m"
@@ -121,3 +125,15 @@ def test_span_get_characters():
         "\x1b[1;3ms",
         "\x1b[1;3mt\x1b[0m",
     ]
+
+
+def test_span_hyperlink():
+    assert (
+        str(Span("Click me", bold=True, hyperlink="https://google.com"))
+        == "\x1b]8;;https://google.com\x1b\\\x1b[1mClick me\x1b[0m\x1b]8;;\x1b\\"
+    )
+
+    assert (
+        str(Span("Click me", hyperlink="https://google.com"))
+        == "\x1b]8;;https://google.com\x1b\\Click me\x1b]8;;\x1b\\"
+    )

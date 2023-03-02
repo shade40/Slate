@@ -54,6 +54,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
     foreground: str = ""
     background: str = ""
+    hyperlink: str = ""
 
     bold: bool = False
     dim: bool = False
@@ -73,7 +74,12 @@ class Span:  # pylint: disable=too-many-instance-attributes
         sequences = self._generate_sequences()
         reset_end = "\x1b[0m" if self.reset_after and sequences != "" else ""
 
-        object.__setattr__(self, "_computed", sequences + self.text + reset_end)
+        combined = sequences + self.text + reset_end
+
+        if self.hyperlink != "":
+            combined = f"\x1b]8;;{self.hyperlink}\x1b\\{combined}\x1b]8;;\x1b\\"
+
+        object.__setattr__(self, "_computed", combined)
         object.__setattr__(self, "_sequences", sequences)
 
     def __str__(self) -> str:
@@ -93,6 +99,9 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         if self.background != "":
             attributes += f", background={self.background!r}"
+
+        if self.hyperlink != "":
+            attributes += f", hyperlink={self.hyperlink!r}"
 
         return f"{name}({attributes})"
 
@@ -132,7 +141,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         if sequences == ";":
             return ""
 
-        return "\x1b[" + sequences.strip(";") + "m"
+        return f"\x1b[{sequences.strip(';')}m"
 
     @classmethod
     def yield_from(cls, line: str) -> Generator[Span, None, None]:
@@ -278,9 +287,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
     def mutate(self, **options: Any) -> Span:
         """Creates a new Span object, mutated with the given options."""
 
-        config = deepcopy(self.__dict__)
-        del config["_computed"]
-        del config["_sequences"]
+        config = self.attrs
 
         config.update(**options)
 
@@ -340,3 +347,8 @@ class Span:  # pylint: disable=too-many-instance-attributes
         """Returns a mutated Span object, with `strike` set to the given value."""
 
         return self.mutate(strike=value)
+
+    def as_hyperlink(self, value: str = "") -> Span:
+        """Returns a mutated Span object, with `hyperlink` set to the given value."""
+
+        return self.mutate(hyperlink=value)
