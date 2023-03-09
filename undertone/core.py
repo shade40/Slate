@@ -16,6 +16,7 @@ from select import select
 from typing import IO, Any, AnyStr, Generator, Literal, TextIO
 
 from .key_names import NT_KEY_NAMES, POSIX_KEY_NAMES
+from .span import Span
 
 try:
     import msvcrt
@@ -35,6 +36,7 @@ __all__ = [
     "get_color_space",
     "set_echo",
     "timeout",
+    "width",
 ]
 
 # SGR (1006) mouse event decoding
@@ -69,7 +71,23 @@ RE_PALETTE_REPLY = re.compile(
     r"\x1b]((?:10)|(?:11));rgb:([0-9a-f]{4})\/([0-9a-f]{4})\/([0-9a-f]{4})\x1b\\"
 )
 
+RE_ANSI = re.compile(r"(?:\x1b\[(.*?)[mH])|(?:\x1b\](.*?)\x1b\\)|(?:\x1b_G(.*?)\x1b\\)")
+
 DEFAULT_COLOR_DEFAULTS = {"10": "dedede", "11": "141414"}
+
+
+def width(text: str | Span) -> int:
+    """Returns the visual width of some text.
+
+    Args:
+        text: The text to test for. Spans are faster to query, as they don't need to
+            rely on regex for the calculation.
+    """
+
+    if isinstance(text, Span):
+        return len(text.text)
+
+    return len(RE_ANSI.sub("", text))
 
 
 class ColorSpace(Enum):
