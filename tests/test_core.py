@@ -3,8 +3,8 @@ import sys
 import tempfile
 from io import StringIO
 
-from undertone.core import ColorSpace, get_color_space, parse_mouse_event, width
-from undertone.span import Span
+from gunmetal.core import ColorSpace, get_color_space, parse_mouse_event, width
+from gunmetal.span import Span
 
 
 def test_core_get_color_space():

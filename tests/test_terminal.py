@@ -1,6 +1,6 @@
 from io import StringIO
 
-from undertone import ColorSpace, Span, Terminal
+from gunmetal import ColorSpace, Span, Terminal
 
 
 def test_terminal_color_space_forcing():

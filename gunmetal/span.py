@@ -85,6 +85,12 @@ class Span:  # pylint: disable=too-many-instance-attributes
     def __str__(self) -> str:
         return self._computed
 
+    def __len__(self) -> int:
+        return len(self.text)
+
+    def __getitem__(self, sli: int | slice) -> str:
+        return self.mutate(text=self.text[sli])
+
     def __repr__(self) -> str:
         name = type(self).__name__
 
@@ -183,7 +189,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         def _parse_sequence(
             seq: str, options: dict[str, bool | str]
         ) -> dict[str, bool | str]:
-            """Parses the given sequence into a option-dict."""
+            """Parses the given sequence into an option-dict."""
 
             in_color = False
             color_buffer = ""
@@ -233,7 +239,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
                     continue
 
-                raise ValueError(f"Could not parse {part}.")
+                raise ValueError(f"Could not parse {part!r} in {line!r}.")
 
             return options
 
@@ -276,6 +282,9 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
             if not always_include_sequence:
                 remaining_sequences = ""
+
+        if self.text == "":
+            return
 
         last = self.text[-1]
 

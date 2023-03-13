@@ -1,4 +1,4 @@
-from undertone import Screen, Span
+from gunmetal import Screen, Span
 
 
 def test_screen_resize():

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from undertone import Span
+from gunmetal import Span
 
 
 def test_span_creation():
@@ -126,6 +126,8 @@ def test_span_get_characters():
         "\x1b[1;3mt\x1b[0m",
     ]
 
+    assert list(Span("", bold=True).get_characters()) == []
+
 
 def test_span_hyperlink():
     assert (
@@ -136,4 +138,13 @@ def test_span_hyperlink():
     assert (
         str(Span("Click me", hyperlink="https://google.com"))
         == "\x1b]8;;https://google.com\x1b\\Click me\x1b]8;;\x1b\\"
+    )
+
+
+def test_span_length():
+    span = Span("Lengthy boye")
+    assert (
+        len(span)
+        == len("Lengthy boye")
+        == len(span.as_color("38;5;141").as_hyperlink("https://google.com"))
     )

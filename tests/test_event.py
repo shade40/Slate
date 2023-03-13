@@ -1,6 +1,6 @@
 import pytest
 
-from undertone.event import CallbackError, Event
+from gunmetal.event import CallbackError, Event
 
 
 def test_event_emit():
