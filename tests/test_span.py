@@ -148,3 +148,9 @@ def test_span_length():
         == len("Lengthy boye")
         == len(span.as_color("38;5;141").as_hyperlink("https://google.com"))
     )
+
+
+def test_span_slice():
+    span = Span("I am slicable", foreground="38;5;141", bold=True)
+
+    assert span[1:5] == Span(" am ", foreground="38;5;141", bold=True)

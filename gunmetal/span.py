@@ -88,7 +88,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
     def __len__(self) -> int:
         return len(self.text)
 
-    def __getitem__(self, sli: int | slice) -> str:
+    def __getitem__(self, sli: int | slice) -> Span:
         return self.mutate(text=self.text[sli])
 
     def __repr__(self) -> str:
@@ -112,7 +112,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         return f"{name}({attributes})"
 
     @property
-    def attrs(self) -> None:
+    def attrs(self) -> dict[str, bool | str]:
         """Returns a copy of the atttributes that define this span."""
 
         attrs = deepcopy(self.__dict__)
@@ -300,7 +300,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         config.update(**options)
 
-        return self.__class__(**config)
+        return self.__class__(**config)  # type: ignore
 
     def as_color(self, color: Any) -> Span:
         """Returns a mutated Span object with the given color."""

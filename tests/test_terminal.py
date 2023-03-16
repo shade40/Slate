@@ -42,9 +42,11 @@ def test_terminal_draw():
     term.draw()
 
     term.stream = stream = StringIO()
-    term.write("I am terminal")
+    term.write("I am terminal", force_overwrite=True)
 
+    print(term._screen._change_buffer.gather())
     term.draw()
+    print(term._screen._change_buffer.gather())
     assert stream.getvalue() == "\x1b[1;1HI am terminal\x1b[0m", repr(stream.getvalue())
 
 
