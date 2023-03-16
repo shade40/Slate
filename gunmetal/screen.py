@@ -109,8 +109,13 @@ class Screen:
             fillchar: The character to fill the matrix with.
         """
 
-        self._cells.clear()
-        self.resize((self.width, self.height), fillchar=fillchar)
+        filler = Span(fillchar)
+
+        for y, row in enumerate(self._cells):
+            for x in range(len(row)):
+                self.write([filler], cursor=(x, y))
+
+        self.cursor = (0, 0)
 
     def write(
         self,
