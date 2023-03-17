@@ -54,8 +54,10 @@ MOUSE_EVENTS = {
     "51": "ctrl-hover",
     "64": "scroll-up",
     "65": "scroll-down",
-    "68": "shift-scroll-up",
-    "69": "shift-scroll-down",
+    "70": "shift-scroll-up",
+    "71": "shift-scroll-down",
+    "80": "ctrl-scroll-up",
+    "81": "ctrl-scroll-down",
 }
 
 START_ALT_BUFFER = "\x1b[?1049h"
