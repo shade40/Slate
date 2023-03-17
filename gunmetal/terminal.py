@@ -22,6 +22,7 @@ from .core import (
     get_color_space,
     get_default_color,
     getch_timeout,
+    set_echo,
 )
 from .event import Event
 from .screen import Screen
@@ -251,6 +252,11 @@ class Terminal:
         self.stream.write(self._screen.render(origin=self.origin, redraw=redraw))
         self.stream.flush()
 
+    def bell(self) -> None:  # no-cov
+        """Plays the terminal's bell sound."""
+
+        self.write_control("\a")
+
     @contextmanager
     def alt_buffer(
         self, hide_cursor: bool = True
@@ -270,6 +276,17 @@ class Terminal:
 
             if hide_cursor:
                 self.show_cursor(True)
+
+    @contextmanager
+    def no_echo(self) -> Generator[None, None, None]:  # no-cov
+        """Temporarily disables echoing in the terminal."""
+
+        try:
+            set_echo(False)
+            yield
+
+        finally:
+            set_echo(True)
 
     # @contextmanager
     # def buffered_writer(
