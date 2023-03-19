@@ -54,6 +54,8 @@ MOUSE_EVENTS = {
     "51": "ctrl-hover",
     "64": "scroll-up",
     "65": "scroll-down",
+    "66": "scroll-right",
+    "67": "scroll-left",
     "70": "shift-scroll-up",
     "71": "shift-scroll-down",
     "80": "ctrl-scroll-up",
