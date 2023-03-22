@@ -154,3 +154,22 @@ def test_span_slice():
     span = Span("I am slicable", foreground="38;5;141", bold=True)
 
     assert span[1:5] == Span(" am ", foreground="38;5;141", bold=True)
+
+
+def test_span_split():
+    span = Span("I must be split", background="48;2;11;33;55")
+
+    assert span.split(" ") == [
+        Span("I", background="48;2;11;33;55"),
+        Span("must", background="48;2;11;33;55"),
+        Span("be", background="48;2;11;33;55"),
+        Span("split", background="48;2;11;33;55"),
+    ]
+
+
+def test_span_contains():
+    span = Span("Some text that contains", bold=True, underline=True)
+
+    assert "text" in span
+    assert "Some " in span
+    assert "what" not in span

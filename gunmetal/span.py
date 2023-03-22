@@ -88,6 +88,9 @@ class Span:  # pylint: disable=too-many-instance-attributes
     def __len__(self) -> int:
         return len(self.text)
 
+    def __contains__(self, text: str) -> bool:
+        return text in self.text
+
     def __getitem__(self, sli: int | slice) -> Span:
         return self.mutate(text=self.text[sli])
 
@@ -301,6 +304,11 @@ class Span:  # pylint: disable=too-many-instance-attributes
         config.update(**options)
 
         return self.__class__(**config)  # type: ignore
+
+    def split(self, char: str = " ") -> list[Span]:
+        """Splits this span by the given character."""
+
+        return [self.mutate(text=part) for part in self.text.split(char)]
 
     def as_color(self, color: Any) -> Span:
         """Returns a mutated Span object with the given color."""
