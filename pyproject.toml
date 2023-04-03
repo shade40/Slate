@@ -32,6 +32,12 @@ Source = "https://github.com/unknown/gunmetal"
 [tool.hatch.version]
 path = "slate/__about__.py"
 
+[tool.hatch.build]
+include = [
+  "slate/*.py",
+  "/tests",
+]
+
 [tool.hatch.envs.default]
 dependencies = [
   "pytest",
