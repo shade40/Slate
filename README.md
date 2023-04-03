@@ -1,21 +1,17 @@
-# undertone
+![slate](https://singlecolorimage.com/get/C0C2C9/1600x200)
 
-[![PyPI - Version](https://img.shields.io/pypi/v/wtul-plumbing.svg)](https://pypi.org/project/wtul-plumbing)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/wtul-plumbing.svg)](https://pypi.org/project/wtul-plumbing)
+## slate
 
------
+A lightweight library to interface with the terminal.
 
-**Table of Contents**
-
-- [Installation](#installation)
-- [License](#license)
-
-## Installation
-
-```console
-pip install undertone
+```
+pip install sh40-slate
 ```
 
-## License
+![rule](https://singlecolorimage.com/get/C0C2C9/1600x5)
 
-`undertone` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+### Purpose
+
+![rule](https://singlecolorimage.com/get/C0C2C9/1600x5)
+
+### Examples
