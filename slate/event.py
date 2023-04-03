@@ -23,6 +23,11 @@ class Event:
 
     _listeners: list[Callable[[Any], Any]] = field(default_factory=list)
 
+    def __bool__(self) -> bool:
+        """Returns whether this event has any listeners."""
+
+        return len(self._listeners) > 0
+
     def __iadd__(self, callback: Any) -> Event:
         if not callable(callback):
             raise ValueError(f"Invalid type for callback: {callback}")
@@ -31,7 +36,7 @@ class Event:
 
         return self
 
-    def __call__(self, data: Any) -> int:
+    def __call__(self, data: Any | None = None) -> int:
         """Emits the event to all listeners.
 
         Args:
@@ -43,7 +48,11 @@ class Event:
 
         for callback in self._listeners:
             try:
-                callback(data)
+                if data is None:
+                    callback()
+                else:
+                    callback(data)
+
             except Exception as exc:
                 raise CallbackError(f"Error executing callback {callback!r}.") from exc
 

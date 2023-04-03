@@ -141,7 +141,7 @@ class Screen:
         changes = 0
 
         for span in spans:
-            for char in span.get_characters():
+            for char in span.get_characters(always_include_sequence=True):
                 if x >= self.width or y >= self.height:
                     break
 

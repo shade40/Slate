@@ -47,7 +47,7 @@ class Terminal:
     def __post_init__(self) -> None:
         self._screen = Screen(*self.size)
 
-        self.on_resize = Event("Resize")
+        self.on_resize = Event("Terminal Resized")
         self.on_resize += self._screen.resize
 
     @property

@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "gunmetal"
+name = "sh40-slate"
 description = "A lightweight set of tools for interfacing with the terminal."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -30,7 +30,7 @@ Issues = "https://github.com/unknown/gunmetal/issues"
 Source = "https://github.com/unknown/gunmetal"
 
 [tool.hatch.version]
-path = "gunmetal/__about__.py"
+path = "slate/__about__.py"
 
 [tool.hatch.envs.default]
 dependencies = [
