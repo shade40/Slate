@@ -3,8 +3,8 @@ import sys
 import tempfile
 from io import StringIO
 
-from gunmetal.core import ColorSpace, get_color_space, parse_mouse_event, width
-from gunmetal.span import Span
+from slate.core import ColorSpace, get_color_space, parse_mouse_event, width
+from slate.span import Span
 
 
 def test_core_get_color_space():
@@ -28,8 +28,8 @@ def test_core_get_color_space():
 def test_core_parse_mouse_event():
     assert parse_mouse_event("\x1b") == parse_mouse_event("\x1b[1;2m") == None
 
-    assert parse_mouse_event("\x1b[<0;12;23M") == "mouse:left-click@12;23"
-    assert parse_mouse_event("\x1b[<2;45;8m") == "mouse:right-release@45;8"
+    assert parse_mouse_event("\x1b[<0;12;23M") == "mouse:left_click@12;23"
+    assert parse_mouse_event("\x1b[<2;45;8m") == "mouse:right_release@45;8"
 
 
 def test_core_width():

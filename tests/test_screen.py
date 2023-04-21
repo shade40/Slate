@@ -1,4 +1,4 @@
-from gunmetal import Screen, Span
+from slate import Screen, Span
 
 
 def test_screen_resize():

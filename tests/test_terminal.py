@@ -1,6 +1,6 @@
 from io import StringIO
 
-from gunmetal import ColorSpace, Span, Terminal
+from slate import ColorSpace, Span, Terminal
 
 
 def test_terminal_color_space_forcing():
@@ -77,10 +77,10 @@ def test_terminal_write_diff_types():
 
     assert term._screen._cells[0][0:5] == [
         "\x1b[38;5;141;1;2mH",
-        "e",
-        "l",
-        "l",
-        "o\x1b[0m",
+        "\x1b[38;5;141;1;2me",
+        "\x1b[38;5;141;1;2ml",
+        "\x1b[38;5;141;1;2ml",
+        "\x1b[38;5;141;1;2mo\x1b[0m",
     ]
 
     changes = term.write(

@@ -25,9 +25,9 @@ dependencies = []
 dynamic = ["version"]
 
 [project.urls]
-Documentation = "https://github.com/unknown/gunmetal#readme"
-Issues = "https://github.com/unknown/gunmetal/issues"
-Source = "https://github.com/unknown/gunmetal"
+Documentation = "https://github.com/shade40/slate#readme"
+Issues = "https://github.com/shade40/slate/issues"
+Source = "https://github.com/shade40/slate"
 
 [tool.hatch.version]
 path = "slate/__about__.py"
@@ -44,9 +44,9 @@ dependencies = [
   "pytest-cov",
 ]
 [tool.hatch.envs.default.scripts]
-test = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=gunmetal --cov=tests && coverage html"
-lint = "pylint gunmetal"
-type = "mypy gunmetal"
+test = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=slate --cov=tests && coverage html"
+lint = "pylint slate"
+type = "mypy slate"
 upload = "hatch build && twine upload dist/* && hatch clean"
 
 [[tool.hatch.envs.test.matrix]]
@@ -56,7 +56,7 @@ python = ["38", "39", "310", "311"]
 branch = true
 parallel = true
 omit = [
-  "gunmetal/__about__.py",
+  "slate/__about__.py",
 ]
 
 [tool.coverage.report]

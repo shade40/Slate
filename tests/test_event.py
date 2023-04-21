@@ -1,6 +1,6 @@
 import pytest
 
-from gunmetal.event import CallbackError, Event
+from slate.event import CallbackError, Event
 
 
 def test_event_emit():

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from gunmetal import Span
+from slate import Span
 
 
 def test_span_creation():
