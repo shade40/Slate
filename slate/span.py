@@ -29,7 +29,7 @@ UNSETTERS = {
     "underline": "24",
     "blink": "25",
     "blink2": "26",
-    "inverse": "27",
+    "invert": "27",
     "invisible": "28",
     "strikethrough": "29",
     "foreground": "39",
