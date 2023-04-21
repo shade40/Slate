@@ -16,8 +16,11 @@ from .core import (
     END_SYNCHRONIZED_UPDATE,
     HIDE_CURSOR,
     QUERY_SYNCHRONIZED_UPDATE,
+    RESTORE_TITLE,
+    SET_TITLE,
     SHOW_CURSOR,
     START_ALT_BUFFER,
+    STORE_TITLE,
     ColorSpace,
     get_color_space,
     get_default_color,
@@ -43,6 +46,7 @@ class Terminal:
     _screen: Screen = field(init=False)
     _previous_size: tuple[int, int] | None = None
     _forced_color_space: ColorSpace | None = None
+    _has_custom_title: bool = False
 
     def __post_init__(self) -> None:
         self._screen = Screen(*self.size)
@@ -160,6 +164,20 @@ class Terminal:
 
         self._screen.cursor = new
 
+    def set_title(self, new: str) -> str:
+        """Sets the terminal's title.
+
+        The first time it is set within an application, the previous value will be
+        stored. When the application finishes (i.e. `alt_buffer` quits) the original
+        title is restored.
+        """
+
+        if not self._has_custom_title:
+            self.write_control(STORE_TITLE)
+
+        self.write_control(SET_TITLE.format(title=new))
+        self._has_custom_title = True
+
     def get_fg_color(self) -> str:
         """Returns the foreground color of the terminal."""
 
@@ -273,6 +291,7 @@ class Terminal:
 
         finally:
             self.write_control(END_ALT_BUFFER)
+            self.write_control(RESTORE_TITLE)
 
             if hide_cursor:
                 self.show_cursor(True)
