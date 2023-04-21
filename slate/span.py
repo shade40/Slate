@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import re
-from copy import deepcopy
 from dataclasses import dataclass, field, fields
 from itertools import chain
 from typing import Any, Generator
@@ -116,13 +115,23 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
     @property
     def attrs(self) -> dict[str, bool | str]:
-        """Returns a copy of the atttributes that define this span."""
+        """Returns a copy of the attributes that define this span."""
 
-        attrs = deepcopy(self.__dict__)
-        del attrs["_computed"]
-        del attrs["_sequences"]
-
-        return attrs
+        return {
+            "text": self.text,
+            "bold": self.bold,
+            "dim": self.dim,
+            "italic": self.italic,
+            "underline": self.underline,
+            "blink": self.blink,
+            "fast_blink": self.fast_blink,
+            "invert": self.invert,
+            "conceal": self.conceal,
+            "strike": self.strike,
+            "foreground": self.foreground,
+            "background": self.background,
+            "hyperlink": self.hyperlink,
+        }
 
     @staticmethod
     def _is_background_color(body: str) -> bool:
