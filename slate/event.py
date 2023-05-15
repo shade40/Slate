@@ -49,7 +49,7 @@ class Event:
         for callback in self._listeners:
             try:
                 if data is None:
-                    callback()
+                    callback()  # type: ignore
                 else:
                     callback(data)
 

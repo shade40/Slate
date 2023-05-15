@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
-from .span import Span
+from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
 
 
 class ChangeBuffer:
@@ -142,7 +142,7 @@ class Screen:
 
         for span in spans:
             for char in span.get_characters(always_include_sequence=True):
-                if x >= self.width or y >= self.height:
+                if self.width <= x or x < 0 or self.height <= y or y < 0:
                     break
 
                 next_x, next_y = x + 1, y
@@ -204,3 +204,78 @@ class Screen:
             buffer += "\x1b[0m"
 
         return buffer
+
+    # TODO: This API (`export_svg` returning either a str in terminal or
+    #       str, str in screen) is confusing and bad and please fix
+    def export_svg_with_styles(
+        self,
+        font_size: int,
+        origin: tuple[float, float],
+        default_foreground: str,
+        default_background: str,
+        style_class_template: str = "screen__span{i}",
+    ) -> tuple[str, str]:
+        """Exports a whole load of SVG tags that represents our character matrix.
+
+        Args:
+            font_size: The font size within the SVG.
+            origin: The origin of all the coordinates in the output.
+            default_foreground: If a character doesn't have a foreground, this gets
+                substituted.
+            default_background: If a character doesn't have a foreground, this gets
+                substituted.
+            style_class_template: The template used to create classes for each unique
+                style. Must contain `{i}`.
+
+        Returns:
+            The output SVG, and all the styles contained within. Note that the SVG
+            here is only the body, so you need to wrap it as `<svg ...>{here}</svg>`.
+            Terminal does this automatically.
+        """
+
+        def _get_svg(span: Span, x: float, y: float, i: int) -> tuple[str, str]:
+            """Gets the SVG and CSS styling for any given span."""
+
+            cls = style_class_template.format(i=i)
+            css = ";\n".join(
+                f"{key}:{value}" for key, value in span.get_svg_styles().items()
+            )
+
+            return (
+                span.as_svg(
+                    font_size=font_size,
+                    default_foreground=default_foreground,
+                    default_background=default_background,
+                    origin=(x, y),
+                    cls=cls,
+                ),
+                (f".{cls} {{" + css + "}\n"),
+            )
+
+        x, y = origin
+
+        svg = ""
+        stylesheet = ""
+
+        char_width = font_size * SVG_CHAR_WIDTH
+        char_height = font_size * SVG_CHAR_HEIGHT
+
+        previous_attrs = None
+
+        i = 0
+        for row in self._cells:
+            for span in Span.group(row):
+                if previous_attrs != span.attrs:
+                    i += 1
+
+                new_svg, new_style = _get_svg(span, x, y, i)
+                svg += new_svg
+                stylesheet += new_style
+
+                previous_attrs = span.attrs
+                x += len(span) * char_width
+
+            y += char_height
+            x = origin[0]
+
+        return svg, stylesheet

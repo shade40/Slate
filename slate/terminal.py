@@ -29,13 +29,32 @@ from .core import (
 )
 from .event import Event
 from .screen import Screen
-from .span import Span
+from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
 
 RE_PIXEL_SIZE = re.compile(r"\x1b\[4;([\d]+);([\d]+)t")
 
+SVG_TEMPLATE = """
+<svg width="{total_width}" height="{total_height}"
+    viewBox="0 0 {total_width} {total_height}" xmlns="http://www.w3.org/2000/svg">
+    <style type="text/css">
+        text {{
+            font-size: {font_size}px;
+            font-family: Menlo, 'DejaVu Sans Mono', consolas, 'Courier New', monospace;
+            font-feature-settings: normal;
+            /* Inline SVGs are `antialiased` by default, while `src=`-d ones are `auto`.*/
+            -webkit-font-smoothing: auto;
+        }}
+{stylesheet}
+    </style>
+{background}
+<g transform="translate({screen_margin_x}, {screen_margin_y})">
+{screen}
+</g>
+</svg>"""
+
 
 @dataclass
-class Terminal:
+class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-attributes
     """An object to read & write data to and from the terminal."""
 
     stream: TextIO = sys.stdout
@@ -46,7 +65,7 @@ class Terminal:
     _screen: Screen = field(init=False)
     _previous_size: tuple[int, int] | None = None
     _forced_color_space: ColorSpace | None = None
-    _has_custom_title: bool = False
+    _custom_title: str | None = None
 
     def __post_init__(self) -> None:
         self._screen = Screen(*self.size)
@@ -126,7 +145,7 @@ class Terminal:
     def resolution(self) -> tuple[int, int]:  # no-cov
         """Gets the pixel resolution of the terminal.
 
-        Arguments:
+        Args:
             fallback: Returned when something went wrong. Usually this means the
                 terminal is not a TTY, or it sent a garbled response.
 
@@ -164,7 +183,67 @@ class Terminal:
 
         self._screen.cursor = new
 
-    def set_title(self, new: str) -> str:
+    @contextmanager
+    def alt_buffer(
+        self, hide_cursor: bool = True
+    ) -> Generator[None, None, None]:  # no-cov
+        """Manages an alternate buffer in the terminal."""
+
+        try:
+            self.write_control(START_ALT_BUFFER)
+
+            if hide_cursor:
+                self.show_cursor(False)
+
+            yield
+
+        finally:
+            self.write_control(END_ALT_BUFFER)
+            self.write_control(RESTORE_TITLE)
+
+            if hide_cursor:
+                self.show_cursor(True)
+
+    @contextmanager
+    def no_echo(self) -> Generator[None, None, None]:  # no-cov
+        """Temporarily disables echoing in the terminal."""
+
+        try:
+            set_echo(False)
+            yield
+
+        finally:
+            set_echo(True)
+
+    @contextmanager
+    def report_mouse(self) -> Generator[None, None, None]:  # no-cov
+        """Sets mouse reporting for the duration of the context manager."""
+
+        try:
+            self.set_report_mouse(True)
+            yield
+
+        finally:
+            self.set_report_mouse(False)
+
+    @contextmanager
+    def batch(self) -> Generator[None, None, None]:  # no-cov
+        """A context within which every `write` is batched into one draw call.
+
+        This implements the [synchronized update]
+        (https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036)
+        protocol.
+        """
+
+        try:
+            self.write_control(BEGIN_SYNCHRONIZED_UPDATE)
+
+            yield
+
+        finally:
+            self.write_control(END_SYNCHRONIZED_UPDATE)
+
+    def set_title(self, new: str) -> None:
         """Sets the terminal's title.
 
         The first time it is set within an application, the previous value will be
@@ -172,11 +251,11 @@ class Terminal:
         title is restored.
         """
 
-        if not self._has_custom_title:
+        if self._custom_title:
             self.write_control(STORE_TITLE)
 
         self.write_control(SET_TITLE.format(title=new))
-        self._has_custom_title = True
+        self._custom_title = new
 
     def get_fg_color(self) -> str:
         """Returns the foreground color of the terminal."""
@@ -275,78 +354,53 @@ class Terminal:
 
         self.write_control("\a")
 
-    @contextmanager
-    def alt_buffer(
-        self, hide_cursor: bool = True
-    ) -> Generator[None, None, None]:  # no-cov
-        """Manages an alternate buffer in the terminal."""
+    def export_svg(
+        self,
+        font_size: int = 15,
+        default_foreground: str | None = None,
+        default_background: str | None = None,
+    ) -> str:
+        """Exports an SVG image that represents this terminal.
 
-        try:
-            self.write_control(START_ALT_BUFFER)
+        Internally, this exports the terminal's screen and wraps it in a terminal-like
+        style.
 
-            if hide_cursor:
-                self.show_cursor(False)
-
-            yield
-
-        finally:
-            self.write_control(END_ALT_BUFFER)
-            self.write_control(RESTORE_TITLE)
-
-            if hide_cursor:
-                self.show_cursor(True)
-
-    @contextmanager
-    def no_echo(self) -> Generator[None, None, None]:  # no-cov
-        """Temporarily disables echoing in the terminal."""
-
-        try:
-            set_echo(False)
-            yield
-
-        finally:
-            set_echo(True)
-
-    # @contextmanager
-    # def buffered_writer(
-    #     self, offset: tuple[int, int] = (0, 0), flush: bool = True
-    # ) -> Generator[StringIO, None, None]:
-    #     """Creates a StringIO and writes it to the terminal on exit."""
-
-    #     buffer = StringIO()
-
-    #     try:
-    #         yield buffer
-
-    #     finally:
-    #         self.write(buffer.getvalue(), offset=offset, flush=flush)
-
-    @contextmanager
-    def report_mouse(self) -> Generator[None, None, None]:  # no-cov
-        """Sets mouse reporting for the duration of the context manager."""
-
-        try:
-            self.set_report_mouse(True)
-            yield
-
-        finally:
-            self.set_report_mouse(False)
-
-    @contextmanager
-    def batch(self) -> Generator[None, None, None]:  # no-cov
-        """A context within which every `write` is batched into one draw call.
-
-        This implements the [synchronized update]
-        (https://gist.github.com/christianparpart/d8a62cc1ab659194337d73e399004036)
-        protocol.
+        Args:
+            font_size: The font size used for the screen's content.
+            default_foreground: For each character on the screen, this color is used
+                when it doesn't have a foreground color.
+            default_background: For each character on the screen, this color is used
+                when it doesn't have a background color.
         """
 
-        try:
-            if self.supports_synchronized_update:
-                self.write_control(BEGIN_SYNCHRONIZED_UPDATE)
+        background_color = default_background or self.get_bg_color()
 
-            yield
+        screen, screen_stylesheet = self._screen.export_svg_with_styles(
+            origin=(0, 0),
+            font_size=font_size,
+            default_foreground=default_foreground or self.get_fg_color(),
+            default_background=background_color,
+        )
 
-        finally:
-            if self.supports_synchronized_update:
-                self.write_control(END_SYNCHRONIZED_UPDATE)
+        margin_x = 16
+        margin_y = 16
+
+        total_width = self.width * SVG_CHAR_WIDTH * font_size + 2 * margin_x
+        total_height = self.height * SVG_CHAR_HEIGHT * font_size + 2 * margin_y
+
+        background = (
+            f"<rect width='{total_width}' height='{total_height}'"
+            + f" fill='#{background_color}' rx='9px'></rect>"
+        )
+
+        return SVG_TEMPLATE.format(
+            font_size=font_size,
+            screen_margin_x=margin_x,
+            screen_margin_y=margin_y,
+            total_width=total_width,
+            total_height=total_height,
+            stylesheet=screen_stylesheet,
+            background=background,
+            chrome="",
+            screen=screen,
+        )
