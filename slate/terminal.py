@@ -31,6 +31,11 @@ from .event import Event
 from .screen import Screen
 from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
 
+__all__ = [
+    "Terminal",
+    "terminal",
+]
+
 RE_PIXEL_SIZE = re.compile(r"\x1b\[4;([\d]+);([\d]+)t")
 
 SVG_TEMPLATE = """
@@ -72,6 +77,9 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
 
         self.on_resize = Event("Terminal Resized")
         self.on_resize += self._screen.resize
+
+        self.foreground_color = get_default_color("10", stream=self.stream)
+        self.background_color = get_default_color("11", stream=self.stream)
 
     @property
     def color_space(self) -> ColorSpace:
@@ -257,16 +265,6 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         self.write_control(SET_TITLE.format(title=new))
         self._custom_title = new
 
-    def get_fg_color(self) -> str:
-        """Returns the foreground color of the terminal."""
-
-        return get_default_color("10", stream=self.stream)
-
-    def get_bg_color(self) -> str:
-        """Returns the background color of the terminal."""
-
-        return get_default_color("11", stream=self.stream)
-
     def show_cursor(self, value: bool = True) -> None:  # no-cov
         """Shows or hides the terminal's cursor."""
 
@@ -373,12 +371,12 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
                 when it doesn't have a background color.
         """
 
-        background_color = default_background or self.get_bg_color()
+        background_color = default_background or self.background_color
 
         screen, screen_stylesheet = self._screen.export_svg_with_styles(
             origin=(0, 0),
             font_size=font_size,
-            default_foreground=default_foreground or self.get_fg_color(),
+            default_foreground=default_foreground or self.foreground_color,
             default_background=background_color,
         )
 
@@ -404,3 +402,6 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
             chrome="",
             screen=screen,
         )
+
+
+terminal = Terminal()
