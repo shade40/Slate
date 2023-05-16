@@ -138,7 +138,6 @@ def get_default_color(
 
     mtch = RE_PALETTE_REPLY.match(reply)
     if mtch is None:
-        print(layer)
         return DEFAULT_COLOR_DEFAULTS[layer]
 
     _, red, green, blue = mtch.groups()

@@ -57,3 +57,8 @@ class Event:
                 raise CallbackError(f"Error executing callback {callback!r}.") from exc
 
         return len(self._listeners)
+
+    def clear(self) -> None:
+        """Removes all listeners from th event."""
+
+        self._listeners.clear()
