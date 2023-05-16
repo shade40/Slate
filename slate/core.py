@@ -157,6 +157,10 @@ def get_color_space() -> ColorSpace:
         `ColorSpace.NO_COLOR` will always be returned.
     """
 
+    shell_sys = os.getenv("SLATE_COLORSYS")
+    if shell_sys is not None:
+        return ColorSpace(shell_sys.lower())
+
     if os.getenv("NO_COLOR") is not None:
         return ColorSpace.NO_COLOR
 
