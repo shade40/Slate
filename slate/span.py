@@ -8,7 +8,7 @@ from itertools import chain
 from typing import Any, Generator, Iterable
 from html import escape
 
-from .color import Color
+from .color import Color, BLACK, WHITE
 
 SETTERS = {
     "bold": "1",
@@ -152,7 +152,7 @@ def _parse_sequence(seq: str, options: dict[str, bool | str]) -> None | str:
                     "back" if _is_background_color(color_buffer) else "fore"
                 ) + "ground"
 
-                options[key] = color_buffer
+                options[key] = Color.from_ansi(color_buffer)
 
                 color_buffer = ""
                 in_color = False
@@ -170,7 +170,7 @@ def _parse_sequence(seq: str, options: dict[str, bool | str]) -> None | str:
             key = UNSETTERS_TO_STYLES[part]
 
             if key in ["foreground", "background"]:
-                options[key] = ""
+                options[key] = None
 
             else:
                 options[key] = False
@@ -196,8 +196,8 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
     text: str
 
-    foreground: str = ""
-    background: str = ""
+    foreground: Color | None = None
+    background: Color | None = None
     hyperlink: str = ""
 
     bold: bool = False
@@ -247,10 +247,10 @@ class Span:  # pylint: disable=too-many-instance-attributes
         )
         attributes += ", ".join(f"{name}=True" for name in truthy_fields)
 
-        if self.foreground != "":
+        if self.foreground is not None:
             attributes += f", foreground={self.foreground!r}"
 
-        if self.background != "":
+        if self.background is not None:
             attributes += f", background={self.background!r}"
 
         if self.hyperlink != "":
@@ -261,9 +261,16 @@ class Span:  # pylint: disable=too-many-instance-attributes
     def _generate_sequences(self) -> str:
         """Generates the sequences represented by this Span."""
 
-        sequences = ";".join([self.foreground, self.background])
+        colors = []
+        if self.foreground is not None:
+            colors.append(self.foreground.ansi)
 
-        if sequences != "" and not sequences.endswith(";"):
+        if self.background is not None:
+            colors.append(self.background.ansi)
+
+        sequences = ";".join(colors)
+
+        if len(sequences) > 0:
             sequences += ";"
 
         for fld in fields(self):
@@ -305,7 +312,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         if not line.endswith("\x1b"):
             line += "\x1b"
 
-        options: dict[str, bool | str] = {}
+        options: dict[str, bool | Color | None] = {}
 
         index = 0
         for mtch in RE_ANSI_STYLES.finditer(line):
@@ -409,19 +416,11 @@ class Span:  # pylint: disable=too-many-instance-attributes
             if key == "text":
                 continue
 
-            if not self.invert and key == "foreground" and value != "":
-                assert isinstance(
-                    value, str
-                ), f"invalid type for foreground: {value!r}."
+            if not self.invert and key == "foreground" and value is not None:
+                css["fill"] = value.hex
 
-                css["fill"] = Color.from_ansi(value).hex
-
-            if self.invert and key == "background" and value != "":
-                assert isinstance(
-                    value, str
-                ), f"invalid type for background: {value!r}."
-
-                css["fill"] = Color.from_ansi(value).hex
+            if self.invert and key == "background" and value is not None:
+                css["fill"] = value.hex
 
             elif key in STYLE_TO_CSS and value:
                 key, value = STYLE_TO_CSS[key]
@@ -457,15 +456,15 @@ class Span:  # pylint: disable=too-many-instance-attributes
         rect_height = round(font_size * SVG_RECT_HEIGHT, 4)
 
         foreground = (
-            Color.from_ansi(self.foreground).hex
-            if self.foreground != ""
-            else default_foreground
+            self.foreground
+            if self.foreground is not None
+            else Color.from_hex(default_foreground)
         )
 
         background = (
-            Color.from_ansi(self.background).hex
-            if self.background != ""
-            else default_background
+            self.background
+            if self.background is not None
+            else Color.from_hex(default_background)
         )
 
         if self.invert:
@@ -485,7 +484,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
             "<rect"
             + f" x='{x}'"
             + f" y='{y - baseline_offset}'"
-            + f" fill='{background}'"
+            + f" fill='{background.hex}'"
             + f" width='{round(char_width * length + 0.5, 2):.4f}'"
             + f" height='{rect_height}'"
             + "></rect>"
