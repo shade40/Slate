@@ -128,9 +128,10 @@ def get_default_color(
         a leading hash.
     """
 
-    if not stream.isatty():
+    if not sys.stdin.isatty():
         return DEFAULT_COLOR_DEFAULTS[layer]
 
+    stream.flush()
     stream.write(f"\x1b]{layer};?\007")
     stream.flush()
 
@@ -357,6 +358,9 @@ def getch(stream: TextIO = sys.stdin, raw: bool = False) -> str:  # no-cov
     Returns:
         The longest sequence of characters that could be read from the stream.
     """
+
+    if not stream.isatty():
+        return ""
 
     if os.name == "nt":
         key = _getch_nt()
