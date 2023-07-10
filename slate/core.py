@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from enum import Enum
 from select import select
 from typing import IO, Any, AnyStr, Generator, Literal, TextIO
+from io import StringIO
 
 from .key_names import NT_KEY_NAMES, POSIX_KEY_NAMES
 from .span import Span
@@ -34,6 +35,7 @@ __all__ = [
     "getch_timeout",
     "get_default_color",
     "get_color_space",
+    "feed",
     "set_echo",
     "timeout",
     "width",
@@ -82,6 +84,8 @@ RE_PALETTE_REPLY = re.compile(
 RE_ANSI = re.compile(r"(?:\x1b\[(.*?)[mH])|(?:\x1b\](.*?)\x1b\\)|(?:\x1b_G(.*?)\x1b\\)")
 
 DEFAULT_COLOR_DEFAULTS = {"10": "dedede", "11": "141414"}
+
+feeder_stream = StringIO()
 
 
 def width(text: str | Span) -> int:
@@ -253,6 +257,16 @@ def timeout(duration: float) -> Generator[None, None, None]:  # no-cov
         signal.alarm(0)
 
 
+def feed(text: str) -> None:
+    """Feeds some text to be read by `getch`.
+
+    This can be used to manually "interrupt" an ongoing getch call.
+    """
+
+    feeder_stream.write(text)
+    feeder_stream.seek(0)
+
+
 def _getch_posix(  # pylint: disable=used-before-assignment
     stream: TextIO = sys.stdin,
 ) -> str:  # no-cov
@@ -265,6 +279,8 @@ def _getch_posix(  # pylint: disable=used-before-assignment
         The maximum-length sequence of characters that could be read.
     """
 
+    # TODO: Both of these should be proper module-level functions to aviod
+    #       constant redefiniton.
     if stream.encoding is not None:
         decode = getincrementaldecoder(stream.encoding)().decode
 
@@ -287,6 +303,12 @@ def _getch_posix(  # pylint: disable=used-before-assignment
                 buff += str(char)
 
         return buff
+
+    if fed_content := feeder_stream.getvalue():
+        feeder_stream.truncate(0)
+        feeder_stream.seek(0)
+
+        return fed_content
 
     descriptor = stream.fileno()
     old_settings = termios.tcgetattr(descriptor)
