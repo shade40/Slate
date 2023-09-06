@@ -279,7 +279,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
             sequences += SETTERS[fld.name] + ";"
 
-        if sequences == ";":
+        if sequences == "":
             return ""
 
         return f"\x1b[{sequences.strip(';')}m"
@@ -476,6 +476,8 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         if not _is_block(self.text):
             baseline_offset = SVG_RECT_BASELINE_OFFSET * font_size
+        else:
+            baseline_offset = 0
 
         x = round(x, 2)
         y = round(y, 2)
@@ -499,6 +501,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
             "<text  dy='-0.25em'"
             + f" x='{x}'"
             + f" y='{y + font_size}'"
+            + f" fill='{foreground.hex}'"
             + (f" styles='{styles}'" if inline_styles else "")
             + (f" class='{cls}'" if cls is not None else "")
             + f">{_escape_html(self.text)}</text>"

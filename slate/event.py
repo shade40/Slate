@@ -3,7 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any, Callable, Union
+
+EventCallback = Union[Callable[[], bool | None], Callable[[Any], bool | None]]
+
+__all__ = [
+    "Event",
+    "EventCallback",
+    "CallbackError",
+]
 
 
 class CallbackError(Exception):
@@ -21,14 +29,14 @@ class Event:
 
     name: str
 
-    _listeners: list[Callable[[Any], Any]] = field(default_factory=list)
+    _listeners: list[EventCallback] = field(default_factory=list)
 
     def __bool__(self) -> bool:
         """Returns whether this event has any listeners."""
 
         return len(self._listeners) > 0
 
-    def __iadd__(self, callback: Any) -> Event:
+    def __iadd__(self, callback: EventCallback) -> Event:
         if not callable(callback):
             raise ValueError(f"Invalid type for callback: {callback}")
 
@@ -46,12 +54,14 @@ class Event:
             The amount of listeners that were notified.
         """
 
+        output = False
+
         for callback in self._listeners:
             try:
-                if data is None:
-                    callback()  # type: ignore
-                else:
-                    callback(data)
+                try:
+                    output |= callback(data) or False
+                except TypeError:
+                    output |= callback() or False  # type: ignore
 
             except Exception as exc:
                 raise CallbackError(f"Error executing callback {callback!r}.") from exc

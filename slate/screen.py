@@ -145,6 +145,10 @@ class Screen:
                 if self.width <= x or x < 0 or self.height <= y or y < 0:
                     break
 
+                if char == "\n":
+                    y += 1
+                    continue
+
                 next_x, next_y = x + 1, y
 
                 if next_x >= self.width:
