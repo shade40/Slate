@@ -64,7 +64,9 @@ class Event:
                     output |= callback() or False  # type: ignore
 
             except Exception as exc:
-                raise CallbackError(f"Error executing callback {callback!r}.") from exc
+                raise CallbackError(
+                    f"Error executing {self.name!r} callback {callback!r}."
+                ) from exc
 
         return len(self._listeners)
 

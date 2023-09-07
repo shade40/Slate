@@ -35,6 +35,7 @@ path = "slate/__about__.py"
 [tool.hatch.build]
 include = [
   "slate/*.py",
+  "slate/py.typed",
   "/tests",
 ]
 
