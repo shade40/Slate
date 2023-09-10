@@ -146,6 +146,6 @@ not be ideal. Thankfully, we have two projects that can help with that:
 
 - [Zenith](https://github.com/shade40/zenith), a markup language with palette generation, built
     on `Slate`'s `Span` and `Color` primitives.
-- [Celadon](https://github.com/shade40/celadon), a TUI library that uses `Slate` to handle _all_
-    terminal-interfacing.
-- [celx](https://github.com/shade40/celx), a TUI framework built on top of `Celadon`.
+- [Celadon](https://github.com/shade40/celadon), a TUI library that uses `Slate`'s `Terminal` to
+    handle _all_ terminal-interfacing.
+- [celx](https://github.com/shade40/celx), a hypermedia-driven TUI framework built on top of `Celadon`.
