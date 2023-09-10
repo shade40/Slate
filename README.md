@@ -144,8 +144,8 @@ application. Until then peep the `examples` folder, or check out some of the wid
 This library is mostly supposed to _power_ some higher level tools, so using it raw might
 not be ideal. Thankfully, we have two projects that can help with that:
 
-- [Zenith](https://github.com/shade40/zenith), a markup language with palette generation, built
+- [Zenith](https://github.com/shade40/zenith): A markup language with palette generation, built
     on `Slate`'s `Span` and `Color` primitives.
-- [Celadon](https://github.com/shade40/celadon), a TUI library that uses `Slate`'s `Terminal` to
+- [Celadon](https://github.com/shade40/celadon): A TUI library that uses `Slate`'s `Terminal` to
     handle _all_ terminal-interfacing.
-- [celx](https://github.com/shade40/celx), a hypermedia-driven TUI framework built on top of `Celadon`.
+- [celx](https://github.com/shade40/celx): A hypermedia-driven TUI framework built on top of `Celadon`.
