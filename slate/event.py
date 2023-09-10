@@ -44,14 +44,14 @@ class Event:
 
         return self
 
-    def __call__(self, data: Any | None = None) -> int:
+    def __call__(self, data: Any | None = None) -> bool:
         """Emits the event to all listeners.
 
         Args:
             data: The content of the event.
 
         Returns:
-            The amount of listeners that were notified.
+            Whether any callbacks returned True.
         """
 
         output = False
@@ -68,7 +68,7 @@ class Event:
                     f"Error executing {self.name!r} callback {callback!r}."
                 ) from exc
 
-        return len(self._listeners)
+        return output
 
     def clear(self) -> None:
         """Removes all listeners from th event."""
