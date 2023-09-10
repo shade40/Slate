@@ -18,6 +18,8 @@ in a simple to understand, Pythonic manner, and uses a simple
 synchronous API to allow for maximum compatibility with existing
 codebases.
 
+![rule](https://singlecolorimage.com/get/717E8D/1600x3)
+
 ### Feature highlights
 
 #### Screen API
