@@ -8,7 +8,7 @@ A powerful terminal management library.
 pip install sh40-slate
 ```
 
-![rule](https://singlecolorimage.com/get/717E8D/1600x5)
+![rule](https://singlecolorimage.com/get/717E8D/1600x3)
 
 ### Purpose
 
@@ -45,6 +45,7 @@ from random import randint
 
 from slate import terminal, Span, Color
 
+# Hide the terminal's cursor
 terminal.show_cursor(False)
 
 content = [
@@ -57,12 +58,18 @@ content = [
     for _ in range(terminal.height)
 ]
 
+# Use an alt buffer to keep the pre-run terminal state intact
 with terminal.alt_buffer():
     for line in content:
         terminal.write(content)
 
     terminal.draw()
 
+    # Draw a '0' to a random spot on the screen, 60 times a second
+    #
+    # This type of operation is really taxing on terminals (especially old ones,
+    # like Terminal.app) as it generally is done by redrawing the entire screen.
+    # That's no longer gonna be a problem for us.
     while True:
         cursor = (randint(0, terminal.width - 1), randint(0, terminal.height - 1))
 
@@ -73,3 +80,61 @@ with terminal.alt_buffer():
         terminal.draw()
         time.sleep(1 / 60)
 ```
+
+#### Terminal's smart cursor
+
+If you paid attention, you might have noticed that we never moved the terminal's cursor
+while drawing the initial lines of content. This is because the terminal will always track
+and move its own cursor when written to, so it knows when it ran out of space and needs
+to move to a new line.
+
+```python
+from slate import terminal
+
+print(terminal.cursor)  # (0, 0)
+
+terminal.write("1")
+print(terminal.cursor)  # (1, 0)
+```
+
+It will even wrap while writing!
+
+```python
+from slate import terminal, getch
+
+# It will even wrap while writing!
+terminal.write("#" * (terminal.width - 5))
+terminal.write("This is long, but it will wrap around to the next line.")
+terminal.draw()
+
+getch() # Wait for input so the shell prompt doesn't slide things out of view
+```
+
+#### Sophisticated color tools
+
+You might have noticed the usage of the lighten and darken API for colors above. These
+are amongst the many tools we provide for working with colors, which also include blending,
+generating W3C guidelines compliant contrast colors (white for dark colors, black for light
+ones), generating entire 4-color palettes with multiple of the most commonly used strategies,
+and more.
+
+Best part; **it works everywhere**. Colors get translated to the best approximation the current
+terminal can display, so you don't have to worry about things looking completely wonky without
+true color support. Most terminals (at least ones you should be using / targeting) have true
+color support nowadays, but our approximations will be _good enough_ to use on older ones as
+well.
+
+We also have advanced support for the [NO_COLOR](https://no-color.org/) initiative, but instead
+of completely stripping the semantic information colors can convey, we translate each color
+to a greyscale value that matches with the _perceived_ [lightness](https://en.wikipedia.org/wiki/Lightness),
+keeping the application informative.
+
+<p align=center>
+    <img src="https://github.com/shade40/slate/blob/main/assets/color_grids.png?raw=true" alt="Color grid example">
+</p>
+
+### Documentation
+
+Once the library gets to a settled state (near 1.0), documentation will be hosted both online and as a celx
+application. Until then peep the `examples` folder, or check out some of the widget references by using
+`python3 -m pydoc <name>`.
