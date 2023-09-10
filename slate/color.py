@@ -205,14 +205,20 @@ class Color:
         )
 
     @classmethod
-    def black(cls) -> Color:
+    def black(cls, is_background: bool = False) -> Color:
         """Returns a 100% black."""
+
+        if is_background:
+            return BLACK.as_background(is_background)
 
         return BLACK
 
     @classmethod
-    def white(cls) -> Color:
+    def white(cls, is_background: bool = False) -> Color:
         """Returns a 100% white."""
+
+        if is_background:
+            return WHITE.as_background(is_background)
 
         return WHITE
 
