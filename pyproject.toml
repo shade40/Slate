@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "sh40-slate"
-description = "A lightweight set of tools for interfacing with the terminal."
+description = "A powerful terminal management library."
 readme = "README.md"
 requires-python = ">=3.8"
 license = "MIT"
@@ -13,6 +13,11 @@ authors = [
   { name = "bczsalba", email = "bczsalba@gmail.com" },
 ]
 classifiers = [
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
   "Development Status :: 4 - Beta",
   "Programming Language :: Python :: 3.8",
   "Programming Language :: Python :: 3.9",
@@ -20,6 +25,9 @@ classifiers = [
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: Implementation :: CPython",
   "Programming Language :: Python :: Implementation :: PyPy",
+  "Typing :: Typed",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Terminals",
 ]
 dependencies = []
 dynamic = ["version"]
