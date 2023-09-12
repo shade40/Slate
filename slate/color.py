@@ -9,7 +9,7 @@ from math import sqrt
 
 from .color_info import COLOR_TABLE
 
-__all__ = ["Color"]
+__all__ = ["Color", "color"]
 
 OFF_WHITE = (245, 245, 245)
 OFF_BLACK = (35, 35, 35)
@@ -382,6 +382,25 @@ class Color:
         """
 
         return self.blend(self.complement, alpha)
+
+
+def color(description: str | tuple[int, int, int]) -> Color:
+    """Creates a color from the given description.
+
+    This calls either the Color constructor, `Color.from_ansi` or
+    `Color.from_hex`, depending on the given value.
+    """
+
+    if isinstance(description, tuple):
+        return Color(description)
+
+    if isinstance(description, str):
+        if description.startswith("#"):
+            return Color.from_hex(description)
+
+        return Color.from_ansi(description)
+
+    raise ValueError(f"unknown descriptor {description!r}")
 
 
 WHITE = Color((255, 255, 255))
