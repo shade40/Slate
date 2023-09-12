@@ -41,52 +41,52 @@ __all__ = [
     "width",
 ]
 
+_MODIFIERS = (
+    "",
+    "shift_",
+    "option_",
+    "shift_option_",
+    "ctrl_",
+    "shift_ctrl_",
+    "ctrl_option_",
+    "shift_ctrl_option_",
+)
+
+
+def _build_event(
+    name: str, *, base: int, has_alternate: bool = False
+) -> dict[str, str]:
+    """Generates a mouse widget's encoded identifier."""
+
+    event = {}
+
+    for modifier in _MODIFIERS:
+        if has_alternate:
+            event[str(base)] = modifier + "left_" + name
+            event[str(base + 2)] = modifier + "right_" + name
+        else:
+            event[str(base)] = modifier + name
+
+        base += 4
+
+    return event
+
+
 # SGR (1006) mouse event decoding
-MOUSE_EVENTS = {
-    "0": "left_click",
-    "2": "right_click",
-    "16": "ctrl_left_click",
-    "18": "ctrl_right_click",
-    "32": "left_drag",
-    "34": "right_drag",
-    "48": "ctrl_left_drag",
-    "50": "ctrl_right_drag",
-    "35": "hover",
-    "39": "shift_hover",
-    "43": "option_hover",
-    "47": "shift_option_hover",
-    "51": "ctrl_hover",
-    "55": "shift_ctrl_hover",
-    "59": "ctrl_option_hover",
-    "64": "scroll_up",
-    "65": "scroll_down",
-    "66": "scroll_left",
-    "67": "scroll_right",
-    "68": "shift_scroll_up",
-    "69": "shift_scroll_down",
-    "70": "shift_scroll_left",
-    "71": "shift_scroll_right",
-    "72": "option_scroll_up",
-    "73": "option_scroll_down",
-    "74": "option_scroll_left",
-    "75": "option_scroll_right",
-    "76": "shift_option_scroll_up",
-    "77": "shift_option_scroll_down",
-    "78": "shift_option_scroll_left",
-    "79": "shift_option_scroll_right",
-    "80": "ctrl_scroll_up",
-    "81": "ctrl_scroll_down",
-    "82": "ctrl_scroll_left",
-    "83": "ctrl_scroll_right",
-    "84": "shift_ctrl_scroll_up",
-    "85": "shift_ctrl_scroll_down",
-    "86": "shift_ctrl_scroll_left",
-    "87": "shift_ctrl_scroll_right",
-    "88": "ctrl_option_scroll_up",
-    "89": "ctrl_option_scroll_down",
-    "90": "ctrl_option_scroll_left",
-    "91": "ctrl_option_scroll_right",
-}
+MOUSE_EVENTS = dict(
+    sorted(
+        {
+            **_build_event("click", base=0, has_alternate=True),
+            **_build_event("drag", base=32, has_alternate=True),
+            **_build_event("hover", base=35),
+            **_build_event("scroll_up", base=64),
+            **_build_event("scroll_down", base=65),
+            **_build_event("scroll_left", base=66),
+            **_build_event("scroll_right", base=67),
+        }.items()
+    )
+)
+
 
 START_ALT_BUFFER = "\x1b[?1049h"
 END_ALT_BUFFER = "\x1b[?1049l"
