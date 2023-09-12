@@ -4,6 +4,7 @@ import tempfile
 from io import StringIO
 
 from slate.core import ColorSpace, get_color_space, parse_mouse_event, width
+from slate.color import Color
 from slate.span import Span
 
 
@@ -35,7 +36,7 @@ def test_core_parse_mouse_event():
 def test_core_width():
     assert width("Test") == 4
 
-    assert width(Span("Other test", foreground="38;5;141", bold=True)) == len(
-        "Other test"
-    )
+    assert width(
+        Span("Other test", foreground=Color.from_ansi("38;5;141"), bold=True)
+    ) == len("Other test")
     assert width("\x1b[38;5;141;1;2;3;4mBig test") == len("Big test")

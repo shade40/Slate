@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Union
+from typing import Any, Callable, Union, Optional
 
-EventCallback = Union[Callable[[], bool | None], Callable[[Any], bool | None]]
+EventCallback = Union[Callable[[], Optional[bool]], Callable[[Any], Optional[bool]]]
 
 __all__ = [
     "Event",
@@ -59,7 +59,7 @@ class Event:
         for callback in self._listeners:
             try:
                 try:
-                    output |= callback(data) or False
+                    output |= callback(data) or False  # type: ignore
                 except TypeError:
                     output |= callback() or False  # type: ignore
 

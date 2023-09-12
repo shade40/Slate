@@ -223,7 +223,7 @@ class Color:
         return WHITE
 
     @cached_property
-    def ansi(self, localize: bool = True) -> str:
+    def ansi(self) -> str:
         """Returns the ANSI code that represents this color.
 
         Args:
@@ -270,6 +270,8 @@ class Color:
                 index += 10
 
             return f"{index}"
+
+        raise NotImplementedError
 
     @cached_property
     def contrast(self) -> Color:

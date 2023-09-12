@@ -1,6 +1,6 @@
 from io import StringIO
 
-from slate import ColorSpace, Span, Terminal
+from slate import ColorSpace, Span, Terminal, terminal, color
 
 
 def test_terminal_color_space_forcing():
@@ -13,7 +13,7 @@ def test_terminal_color_space_forcing():
 
 
 def test_terminal_colors_match_length():
-    assert len(Terminal().get_fg_color()) == len(Terminal().get_bg_color()) == 6
+    assert len(terminal.foreground_color) == len(terminal.background_color) == 6
 
 
 def test_terminal_clear():
@@ -44,9 +44,7 @@ def test_terminal_draw():
     term.stream = stream = StringIO()
     term.write("I am terminal", force_overwrite=True)
 
-    print(term._screen._change_buffer.gather())
     term.draw()
-    print(term._screen._change_buffer.gather())
     assert stream.getvalue() == "\x1b[1;1HI am terminal\x1b[0m", repr(stream.getvalue())
 
 
@@ -70,21 +68,22 @@ def test_terminal_cursor():
 
 
 def test_terminal_write_diff_types():
-    term = Terminal()
+    terminal.color_space = ColorSpace.TRUE_COLOR
 
-    term._screen.render()
-    term.write("\x1b[38;5;141;1;2mHello")
+    terminal._screen.render()
+    terminal.write("\x1b[38;5;141;1;2mHello")
 
-    assert term._screen._cells[0][0:5] == [
-        "\x1b[38;5;141;1;2mH",
-        "\x1b[38;5;141;1;2me",
-        "\x1b[38;5;141;1;2ml",
-        "\x1b[38;5;141;1;2ml",
-        "\x1b[38;5;141;1;2mo\x1b[0m",
+    assert terminal._screen._cells[0][0:5] == [
+        "\x1b[38;2;175;135;255;1;2mH",
+        "\x1b[38;2;175;135;255;1;2me",
+        "\x1b[38;2;175;135;255;1;2ml",
+        "\x1b[38;2;175;135;255;1;2ml",
+        "\x1b[38;2;175;135;255;1;2mo\x1b[0m",
     ]
 
-    changes = term.write(
-        [Span("Yellow", foreground="38;5;141", bold=True, dim=True)], cursor=(0, 0)
+    changes = terminal.write(
+        [Span("Yellow", foreground=color("38;5;141"), bold=True, dim=True)],
+        cursor=(0, 0),
     )
 
     # 3 changes:

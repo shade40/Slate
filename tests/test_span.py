@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from slate import Span
+from slate import Span, color
 
 
 def test_span_creation():
@@ -35,8 +35,8 @@ def test_span_mutation():
 
 
 def test_span_foreground_background_guess():
-    assert Span("red").as_color("41") == Span("red", background="41")
-    assert Span("green").as_color("32") == Span("green", foreground="32")
+    assert Span("red").as_color("41") == Span("red", background=color("41"))
+    assert Span("green").as_color("32") == Span("green", foreground=color("32"))
 
 
 def test_span_yield_from():
@@ -50,27 +50,39 @@ def test_span_yield_from():
 
     assert _equals(
         "\x1b[38;5;141;1;2mTest\x1b",
-        [Span("Test", foreground="38;5;141", bold=True, dim=True)],
+        [Span("Test", foreground=color("38;5;141"), bold=True, dim=True)],
     )
 
     assert _equals(
         "\x1b[32mTest",
-        [Span("Test", foreground="32")],
+        [Span("Test", foreground=color("32"))],
     )
 
     assert _equals(
         "\x1b[96;48;5;230mTest",
-        [Span("Test", foreground="96", background="48;5;230")],
+        [
+            Span(
+                "Test",
+                foreground=color("96"),
+                background=color("48;5;230"),
+            )
+        ],
     )
 
     assert _equals(
         "\x1b[92mTest",
-        [Span("Test", foreground="92")],
+        [Span("Test", foreground=color("92"))],
     )
 
     assert _equals(
         "\x1b[48;2;11;22;33;38;5;230mTest",
-        [Span("Test", background="48;2;11;22;33", foreground="38;5;230")],
+        [
+            Span(
+                "Test",
+                background=color("48;2;11;22;33"),
+                foreground=color("38;5;230"),
+            )
+        ],
     )
 
     assert _equals(
@@ -82,7 +94,7 @@ def test_span_yield_from():
                 dim=True,
                 italic=True,
                 underline=True,
-                foreground="32",
+                foreground=color("32"),
             ),
             Span("not bold not colored", italic=True, underline=True),
         ],
@@ -151,19 +163,19 @@ def test_span_length():
 
 
 def test_span_slice():
-    span = Span("I am slicable", foreground="38;5;141", bold=True)
+    span = Span("I am slicable", foreground=color("38;5;141"), bold=True)
 
-    assert span[1:5] == Span(" am ", foreground="38;5;141", bold=True)
+    assert span[1:5] == Span(" am ", foreground=color("38;5;141"), bold=True)
 
 
 def test_span_split():
-    span = Span("I must be split", background="48;2;11;33;55")
+    span = Span("I must be split", background=color("48;2;11;33;55"))
 
     assert span.split(" ") == [
-        Span("I", background="48;2;11;33;55"),
-        Span("must", background="48;2;11;33;55"),
-        Span("be", background="48;2;11;33;55"),
-        Span("split", background="48;2;11;33;55"),
+        Span("I", background=color("48;2;11;33;55")),
+        Span("must", background=color("48;2;11;33;55")),
+        Span("be", background=color("48;2;11;33;55")),
+        Span("split", background=color("48;2;11;33;55")),
     ]
 
 

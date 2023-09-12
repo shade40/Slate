@@ -5,10 +5,10 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field, fields
 from itertools import chain
-from typing import Any, Generator, Iterable
+from typing import Any, Generator, Iterable, TypedDict
 from html import escape
 
-from .color import Color, BLACK, WHITE
+from .color import Color, color, BLACK, WHITE
 
 SETTERS = {
     "bold": "1",
@@ -63,6 +63,24 @@ STYLE_TO_CSS = {
     "strikethrough": ("text-decoration", "line-through"),
     "overline": ("text-decoration", "overline"),
 }
+
+
+class SpanConfig(TypedDict):
+    """A dictionary used to store span configuration."""
+
+    text: str
+    bold: bool
+    dim: bool
+    italic: bool
+    underline: bool
+    blink: bool
+    fast_blink: bool
+    invert: bool
+    conceal: bool
+    strike: bool
+    foreground: Color | None
+    background: Color | None
+    hyperlink: str
 
 
 def _escape_html(text: str) -> str:
@@ -124,8 +142,10 @@ def _is_valid_color(body: str) -> bool:
     return False
 
 
-def _parse_sequence(seq: str, options: dict[str, bool | str]) -> None | str:
-    """Parses the given sequence into an option-dict.
+def _parse_sequence(
+    seq: str, options: dict[str, str | bool | Color | None]
+) -> None | str:
+    """Parses the given sequence and inserts it into the given SpanConfig..
 
     This modifies the given options dictionary.
 
@@ -264,10 +284,12 @@ class Span:  # pylint: disable=too-many-instance-attributes
         colors = []
         if self.foreground is not None:
             colors.append(self.foreground.ansi)
+            print(self.foreground, self.foreground.ansi)
 
         if self.background is not None:
             colors.append(self.background.ansi)
 
+        print(colors, self.foreground, self.background)
         sequences = ";".join(colors)
 
         if len(sequences) > 0:
@@ -285,7 +307,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         return f"\x1b[{sequences.strip(';')}m"
 
     @property
-    def attrs(self) -> dict[str, bool | str]:
+    def attrs(self) -> SpanConfig:
         """Returns a copy of the attributes that define this span."""
 
         return {
@@ -312,7 +334,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         if not line.endswith("\x1b"):
             line += "\x1b"
 
-        options: dict[str, bool | Color | None] = {}
+        options: dict[str, str | bool | Color | None] = {}
 
         index = 0
         for mtch in RE_ANSI_STYLES.finditer(line):
@@ -416,10 +438,10 @@ class Span:  # pylint: disable=too-many-instance-attributes
             if key == "text":
                 continue
 
-            if not self.invert and key == "foreground" and value is not None:
+            if not self.invert and key == "foreground" and isinstance(value, Color):
                 css["fill"] = value.hex
 
-            if self.invert and key == "background" and value is not None:
+            if self.invert and key == "background" and isinstance(value, Color):
                 css["fill"] = value.hex
 
             elif key in STYLE_TO_CSS and value:
@@ -513,25 +535,25 @@ class Span:  # pylint: disable=too-many-instance-attributes
         """Creates a new Span object, mutated with the given options."""
 
         config = self.attrs
+        config.update(**options)  # type: ignore
 
-        config.update(**options)
-
-        return self.__class__(**config)  # type: ignore
+        return self.__class__(**config)
 
     def split(self, char: str = " ") -> list[Span]:
         """Splits this span by the given character."""
 
         return [self.mutate(text=part) for part in self.text.split(char)]
 
-    def as_color(self, color: Any) -> Span:
+    def as_color(self, value: Color | str | tuple[int, int, int]) -> Span:
         """Returns a mutated Span object with the given color."""
 
-        body = str(color)
+        if not isinstance(value, Color):
+            value = color(value)
 
-        if _is_background_color(body):
-            return self.mutate(background=body)
+        if value.is_background:
+            return self.mutate(background=value)
 
-        return self.mutate(foreground=body)
+        return self.mutate(foreground=value)
 
     def as_bold(self, value: bool = True) -> Span:
         """Returns a mutated Span object, with `bold` set to the given value."""
