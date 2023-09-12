@@ -56,7 +56,31 @@ _MODIFIERS = (
 def _build_event(
     name: str, *, base: int, has_alternate: bool = False
 ) -> dict[str, str]:
-    """Generates a mouse widget's encoded identifier."""
+    """Generates a mouse event's encoded identifier.
+
+    Args:
+        name: The event name to add as a sufix.
+        base: The index where the event starts.
+        has_alternate: If set, a "left_" and "right_" pair of events will be
+            generated, instead of just one with no prefix.
+
+    Returns:
+        A dictionary of the event's encoded identifier (as str) mapping to the
+        event's name. Event names are formatted as:
+
+            {modifier}_{event}
+
+        or in the case of `has_alternate`:
+
+            {modifier}_left_{event}
+            {modifier}_right_{event}
+
+        ...where `modifier` is assembled least to most powerful, in the order:
+
+            nothing < shift < ctrl < option
+
+        meaning `option` will always be the last modifier, and `shift` the first.
+    """
 
     event = {}
 
