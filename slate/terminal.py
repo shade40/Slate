@@ -251,7 +251,7 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         finally:
             self.write_control(END_SYNCHRONIZED_UPDATE)
 
-    def set_title(self, new: str) -> None:
+    def set_title(self, new: str | None) -> None:
         """Sets the terminal's title.
 
         The first time it is set within an application, the previous value will be
@@ -259,7 +259,12 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         title is restored.
         """
 
-        if self._custom_title:
+        if new is None:
+            self.write_control(RESTORE_TITLE)
+            self._custom_title = None
+            return
+
+        if not self._custom_title:
             self.write_control(STORE_TITLE)
 
         self.write_control(SET_TITLE.format(title=new))
