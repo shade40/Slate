@@ -13,7 +13,7 @@ def test_terminal_color_space_forcing():
 
 
 def test_terminal_colors_match_length():
-    assert len(terminal.foreground_color) == len(terminal.background_color) == 6
+    assert len(terminal.foreground_color.hex) == len(terminal.background_color.hex) == 7
 
 
 def test_terminal_clear():

@@ -27,6 +27,7 @@ from .core import (
     getch_timeout,
     set_echo,
 )
+from .color import Color
 from .event import Event
 from .screen import Screen
 from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
@@ -78,9 +79,6 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         self.on_resize = Event("Terminal Resized")
         self.on_resize += self._screen.resize
 
-        self.foreground_color = get_default_color("10", stream=self.stream)
-        self.background_color = get_default_color("11", stream=self.stream)
-
     @property
     def color_space(self) -> ColorSpace:
         """Returns the best color space available on the system.
@@ -112,6 +110,20 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
             return False
 
         return response in ["\x1b[?2026;1$y", "\x1b[?2026;2$y"]
+
+    @cached_property
+    def foreground_color(self) -> Color:
+        """Returns the terminal's default foreground color."""
+
+        with self.no_echo():
+            return get_default_color("10", stream=self.stream)
+
+    @cached_property
+    def background_color(self) -> Color:
+        """Returns the terminal's default background color."""
+
+        with self.no_echo():
+            return get_default_color("11", stream=self.stream)
 
     @property
     def size(self) -> tuple[int, int]:
@@ -360,8 +372,8 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
     def export_svg(
         self,
         font_size: int = 15,
-        default_foreground: str | None = None,
-        default_background: str | None = None,
+        default_foreground: Color | None = None,
+        default_background: Color | None = None,
     ) -> str:
         """Exports an SVG image that represents this terminal.
 

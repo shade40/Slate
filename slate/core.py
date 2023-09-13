@@ -16,6 +16,7 @@ from select import select
 from typing import IO, Any, AnyStr, Generator, Literal, TextIO
 from io import StringIO
 
+from .color import color, Color
 from .key_names import NT_KEY_NAMES, POSIX_KEY_NAMES
 from .span import Span
 
@@ -131,7 +132,7 @@ RE_PALETTE_REPLY = re.compile(
 
 RE_ANSI = re.compile(r"(?:\x1b\[(.*?)[mH])|(?:\x1b\](.*?)\x1b\\)|(?:\x1b_G(.*?)\x1b\\)")
 
-DEFAULT_COLOR_DEFAULTS = {"10": "dedede", "11": "141414"}
+DEFAULT_COLOR_DEFAULTS = {"10": color("#dedede"), "11": color("#141414")}
 
 feeder_stream = StringIO()
 
@@ -168,7 +169,7 @@ class ColorSpace(Enum):
 
 def get_default_color(
     layer: Literal["10", "11"], stream: TextIO = sys.stdout
-) -> str:  # no-cov
+) -> Color:  # no-cov
     """Gets the default fore or back color for the terminal attached to the stream.
 
     Args:
@@ -187,7 +188,7 @@ def get_default_color(
     stream.write(f"\x1b]{layer};?\007")
     stream.flush()
 
-    reply = getch()
+    reply = getch_timeout(0.01, default="")
 
     mtch = RE_PALETTE_REPLY.match(reply)
     if mtch is None:
@@ -199,7 +200,7 @@ def get_default_color(
     for part in (red, green, blue):
         rgb.append(part[:2])
 
-    return "".join(rgb)
+    return color("#" + "".join(rgb))
 
 
 def get_color_space() -> ColorSpace:

@@ -284,12 +284,10 @@ class Span:  # pylint: disable=too-many-instance-attributes
         colors = []
         if self.foreground is not None:
             colors.append(self.foreground.ansi)
-            print(self.foreground, self.foreground.ansi)
 
         if self.background is not None:
             colors.append(self.background.ansi)
 
-        print(colors, self.foreground, self.background)
         sequences = ";".join(colors)
 
         if len(sequences) > 0:
@@ -454,8 +452,8 @@ class Span:  # pylint: disable=too-many-instance-attributes
         self,
         font_size: int = 15,
         origin: tuple[float, float] = (0, 0),
-        default_foreground: str = "#dddddd",
-        default_background: str = "#212121",
+        default_foreground: Color = color("#dddddd"),
+        default_background: Color = color("#212121"),
         inline_styles: bool = False,
         cls: str | None = None,
     ) -> str:
@@ -478,15 +476,11 @@ class Span:  # pylint: disable=too-many-instance-attributes
         rect_height = round(font_size * SVG_RECT_HEIGHT, 4)
 
         foreground = (
-            self.foreground
-            if self.foreground is not None
-            else Color.from_hex(default_foreground)
+            self.foreground if self.foreground is not None else default_foreground
         )
 
         background = (
-            self.background
-            if self.background is not None
-            else Color.from_hex(default_background)
+            self.background if self.background is not None else default_background
         )
 
         if self.invert:

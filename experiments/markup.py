@@ -6,9 +6,9 @@ from dataclasses import dataclass
 from functools import cached_property
 from typing import Generator
 
-from undertone.span import SETTERS, Span
+from slate.span import SETTERS, Span
 
-from .color_info import COLOR_TABLE, CSS_COLORS
+from color_info import COLOR_TABLE, CSS_COLORS
 
 RE_MARKUP = re.compile(r"(?:\[(.+?)\])?([^\]\[]+)(?=\[|$)")
 

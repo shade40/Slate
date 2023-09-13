@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from .color import Color
 from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
 
 
@@ -209,14 +210,12 @@ class Screen:
 
         return buffer
 
-    # TODO: This API (`export_svg` returning either a str in terminal or
-    #       str, str in screen) is confusing and bad and please fix
     def export_svg_with_styles(
         self,
         font_size: int,
         origin: tuple[float, float],
-        default_foreground: str,
-        default_background: str,
+        default_foreground: Color,
+        default_background: Color,
         style_class_template: str = "screen__span{i}",
     ) -> tuple[str, str]:
         """Exports a whole load of SVG tags that represents our character matrix.
