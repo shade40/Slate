@@ -11,6 +11,7 @@ import signal
 import sys
 from codecs import getincrementaldecoder
 from contextlib import contextmanager
+from dataclasses import dataclass
 from enum import Enum
 from select import select
 from typing import IO, Any, AnyStr, Generator, Literal, TextIO
@@ -52,6 +53,23 @@ _MODIFIERS = (
     "ctrl_option_",
     "shift_ctrl_option_",
 )
+
+
+@dataclass
+class Key:
+    """The object returned by `getch`.
+
+    This allows for checking equality against multiple possible keyboard inputs,
+    like `ctrl-i` and `tab`, through the same object.
+    """
+
+    possible_values: tuple[str, ...]
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, str):
+            return False
+
+        return other in self.possible_values
 
 
 def _build_event(
@@ -188,7 +206,7 @@ def get_default_color(
     stream.write(f"\x1b]{layer};?\007")
     stream.flush()
 
-    reply = getch_timeout(0.01, default="")
+    reply = str(getch_timeout(0.01, default=""))
 
     mtch = RE_PALETTE_REPLY.match(reply)
     if mtch is None:
@@ -413,7 +431,7 @@ def _getch_nt() -> str:  # no-cov
     return buff
 
 
-def getch(stream: TextIO = sys.stdin, raw: bool = False) -> str:  # no-cov
+def getch(stream: TextIO = sys.stdin, raw: bool = False) -> Key:  # no-cov
     """Gets characters from the stream, without blocking.
 
     The implementation is different on POSIX and NT systems, and this method
@@ -431,15 +449,15 @@ def getch(stream: TextIO = sys.stdin, raw: bool = False) -> str:  # no-cov
     """
 
     if not stream.isatty():
-        return ""
+        return Key(("",))
 
     if os.name == "nt":
         key = _getch_nt()
 
         if raw:
-            return key
+            return Key((key,))
 
-        return NT_KEY_NAMES.get(key, key)
+        return Key(NT_KEY_NAMES.get(key, (key,)))
 
     # POSIX interrupts on ctrl-c, so we 'emulate' the input when `KeyboardInterrupt`
     # is raised.
@@ -450,12 +468,12 @@ def getch(stream: TextIO = sys.stdin, raw: bool = False) -> str:  # no-cov
         key = chr(3)
 
     if raw:
-        return key
+        return Key((key,))
 
     if event := parse_mouse_event("\x1b" + key.split("\x1b")[-1]):
-        return event
+        return Key((event,))
 
-    return POSIX_KEY_NAMES.get(key, key)
+    return Key(POSIX_KEY_NAMES.get(key, (key,)))
 
 
 def getch_timeout(
@@ -463,7 +481,7 @@ def getch_timeout(
     default: str | None = None,
     stream: TextIO = sys.stdin,
     raw: bool = False,
-) -> str:  # no-cov
+) -> Key:  # no-cov
     """Calls `getch` with a system timeout.
 
     Note that this on Windows this will call `getch` normally, as `SIGALRM` is not

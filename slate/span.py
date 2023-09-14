@@ -8,7 +8,7 @@ from itertools import chain
 from typing import Any, Generator, Iterable, TypedDict
 from html import escape
 
-from .color import Color, color, BLACK, WHITE
+from .color import Color, color
 
 SETTERS = {
     "bold": "1",
@@ -448,7 +448,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         return css
 
-    def as_svg(
+    def as_svg(  # pylint: disable=too-many-arguments, too-many-locals
         self,
         font_size: int = 15,
         origin: tuple[float, float] = (0, 0),

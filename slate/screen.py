@@ -210,7 +210,7 @@ class Screen:
 
         return buffer
 
-    def export_svg_with_styles(
+    def export_svg_with_styles(  # pylint: disable=too-many-arguments,too-many-locals
         self,
         font_size: int,
         origin: tuple[float, float],

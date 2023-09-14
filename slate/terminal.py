@@ -106,7 +106,7 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
 
         self.write_control(QUERY_SYNCHRONIZED_UPDATE)
 
-        if not (response := getch_timeout(0.05)):
+        if not (response := str(getch_timeout(0.05))):
             return False
 
         return response in ["\x1b[?2026;1$y", "\x1b[?2026;2$y"]
@@ -180,9 +180,11 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
 
         # Some terminals may not respond to a pixel size query, so we send
         # a timed-out getch call with a fallback
-        output = getch_timeout(
-            0.05,
-            default=f"\x1b[4;{';'.join(map(str, reversed(self.resolution_fallback)))}t",
+        output = str(
+            getch_timeout(
+                0.05,
+                default=f"\x1b[4;{';'.join(map(str, reversed(self.resolution_fallback)))}t",
+            )
         )
         mtch = RE_PIXEL_SIZE.match(output)
 
@@ -405,7 +407,7 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
 
         background = (
             f"<rect width='{total_width}' height='{total_height}'"
-            + f" fill='#{background_color}' rx='9px'></rect>"
+            + f" fill='#{background_color.hex}' rx='9px'></rect>"
         )
 
         return SVG_TEMPLATE.format(

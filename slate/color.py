@@ -45,13 +45,13 @@ def calculate_luminance(base: Color) -> float:
     Source: https://stackoverflow.com/a/596243.
     """
 
-    def _linearize(color: float) -> float:
+    def _linearize(val: float) -> float:
         """Converts sRGB color to linear value."""
 
-        if color <= 0.04045:
-            return color / 12.92
+        if val <= 0.04045:
+            return val / 12.92
 
-        return float(((color + 0.055) / 1.055) ** 2.4)
+        return float(((val + 0.055) / 1.055) ** 2.4)
 
     red = _linearize(base.rgb[0] / 255)
     green = _linearize(base.rgb[1] / 255)
@@ -231,8 +231,12 @@ class Color:
                 by the terminal. This means terminals with worse color support can
                 always gracefully degrade to a format they support.
         """
-        from .terminal import terminal
-        from .core import ColorSpace
+        from .terminal import (  # pylint: disable=import-outside-toplevel, cyclic-import
+            terminal,
+        )
+        from .core import (  # pylint: disable=import-outside-toplevel, cyclic-import
+            ColorSpace,
+        )
 
         lead = 38 + 10 * self.is_background
 
