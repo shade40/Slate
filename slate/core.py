@@ -14,7 +14,7 @@ from contextlib import contextmanager
 from dataclasses import dataclass
 from enum import Enum
 from select import select
-from typing import IO, Any, AnyStr, Generator, Literal, TextIO
+from typing import IO, Any, AnyStr, Generator, Literal, TextIO, Iterator
 from io import StringIO
 
 from .color import color, Color
@@ -38,6 +38,7 @@ __all__ = [
     "get_default_color",
     "get_color_space",
     "feed",
+    "Key",
     "set_echo",
     "timeout",
     "width",
@@ -70,6 +71,12 @@ class Key:
             return False
 
         return other in self.possible_values
+
+    def __str__(self) -> str:
+        return self.possible_values[0]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.possible_values)
 
 
 def _build_event(
