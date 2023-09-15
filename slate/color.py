@@ -13,6 +13,7 @@ from .color_info import COLOR_TABLE
 
 if TYPE_CHECKING:
     from .terminal import Terminal
+    from .core import ColorSpace
 
 __all__ = ["Color", "color"]
 
@@ -121,7 +122,7 @@ def calculate_tetradic_group(base: Color) -> tuple[Color, Color, Color, Color]:
 
 
 @dataclass(frozen=True)
-class Color:
+class Color:  # pylint: disable = too-many-instance-attributes
     """A class that represents an RGB value."""
 
     rgb: tuple[int, int, int]
@@ -134,7 +135,6 @@ class Color:
 
     _origin_colorspace: str = "true_color"
     _constructor: str | None = None
-    terminal: "Terminal" | None = None
 
     def __post_init__(self) -> None:
         def _set_field(
@@ -256,14 +256,11 @@ class Color:
         lead = 38 + 10 * self.is_background
 
         origin = ColorSpace(self._origin_colorspace)
-        terminal = self.terminal if self.terminal is not None else terminal
 
         if terminal.color_space >= origin and (
             self._constructor is not None and not self._constructor.startswith("#")
         ):
             return self._constructor
-
-        color_space = terminal.color_space
 
         if terminal.color_space is ColorSpace.TRUE_COLOR:
             return f"{lead};2;{';'.join(map(str, self.rgb))}"

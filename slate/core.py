@@ -207,7 +207,10 @@ class ColorSpace(Enum):
             self.value
         )
 
-    def __eq__(self, other: str | ColorSpace) -> bool:
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, (str, ColorSpace)):
+            return NotImplemented
+
         if isinstance(other, str):
             other = ColorSpace(other)
 
