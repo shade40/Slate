@@ -1,14 +1,33 @@
 import pytest
 
+from slate.core import ColorSpace
 from slate.color import Color
 from slate.color_info import COLOR_TABLE
 
 
 def test_color_from_ansi():
-    assert Color.from_ansi("31") == Color(COLOR_TABLE[1])
-    assert Color.from_ansi("45") == Color(COLOR_TABLE[5], is_background=True)
-    assert Color.from_ansi("93") == Color(COLOR_TABLE[11])
-    assert Color.from_ansi("105") == Color(COLOR_TABLE[13], is_background=True)
+    assert Color.from_ansi("31") == Color(
+        COLOR_TABLE[1],
+        _origin_colorspace="standard",
+        _constructor="31",
+    )
+    assert Color.from_ansi("45") == Color(
+        COLOR_TABLE[5],
+        is_background=True,
+        _origin_colorspace="standard",
+        _constructor="45",
+    )
+    assert Color.from_ansi("93") == Color(
+        COLOR_TABLE[11],
+        _origin_colorspace="standard",
+        _constructor="93",
+    )
+    assert Color.from_ansi("105") == Color(
+        COLOR_TABLE[13],
+        is_background=True,
+        _origin_colorspace="standard",
+        _constructor="105",
+    )
 
 
 def test_color_luminance():
