@@ -6,8 +6,13 @@ from colorsys import hls_to_rgb, rgb_to_hls
 from dataclasses import dataclass, field
 from functools import cached_property, lru_cache
 from math import sqrt
+from typing import TYPE_CHECKING
 
 from .color_info import COLOR_TABLE
+
+
+if TYPE_CHECKING:
+    from .terminal import Terminal
 
 __all__ = ["Color", "color"]
 
@@ -127,9 +132,13 @@ class Color:
     hls: tuple[float, float, float] = field(init=False)
     hex: str = field(init=False)
 
+    _origin_colorspace: str = "true_color"
+    _constructor: str | None = None
+    terminal: "Terminal" | None = None
+
     def __post_init__(self) -> None:
         def _set_field(
-            key: str, value: float | str | tuple[float, float, float]
+            key: str, value: float | str | tuple[float, float, float] | ColorSpace
         ) -> None:
             object.__setattr__(self, key, value)
 
@@ -160,14 +169,19 @@ class Color:
             return Color(
                 (int(parts[2]), int(parts[3]), int(parts[4])),
                 is_background=is_background,
+                _origin_colorspace="true_color",
+                _constructor=ansi,
             )
 
-        ansi = parts[-1]
+        end = parts[-1]
+        color_space = "eight_bit"
 
-        index = int(ansi)
+        index = int(end)
 
         # Convert indices to 16-color
         if len(parts) == 1:
+            color_space = "standard"
+
             if 30 <= index < 38:
                 index -= 30
 
@@ -188,7 +202,12 @@ class Color:
                 + f" got {index!r} from {ansi!r}."
             )
 
-        return Color(COLOR_TABLE[index], is_background=is_background)
+        return Color(
+            COLOR_TABLE[index],
+            is_background=is_background,
+            _origin_colorspace=color_space,
+            _constructor=ansi,
+        )
 
     @classmethod
     def from_hex(cls, hexstring: str) -> Color:
@@ -201,7 +220,8 @@ class Color:
                 int(hexstring[:2], base=16),
                 int(hexstring[2:4], base=16),
                 int(hexstring[4:], base=16),
-            )
+            ),
+            _constructor=hexstring,
         )
 
     @classmethod
@@ -224,13 +244,8 @@ class Color:
 
     @cached_property
     def ansi(self) -> str:
-        """Returns the ANSI code that represents this color.
+        """Returns the ANSI code that represents this color."""
 
-        Args:
-            localize: If set, the color will be transformed to a format supported
-                by the terminal. This means terminals with worse color support can
-                always gracefully degrade to a format they support.
-        """
         from .terminal import (  # pylint: disable=import-outside-toplevel, cyclic-import
             terminal,
         )
@@ -239,6 +254,16 @@ class Color:
         )
 
         lead = 38 + 10 * self.is_background
+
+        origin = ColorSpace(self._origin_colorspace)
+        terminal = self.terminal if self.terminal is not None else terminal
+
+        if terminal.color_space >= origin and (
+            self._constructor is not None and not self._constructor.startswith("#")
+        ):
+            return self._constructor
+
+        color_space = terminal.color_space
 
         if terminal.color_space is ColorSpace.TRUE_COLOR:
             return f"{lead};2;{';'.join(map(str, self.rgb))}"

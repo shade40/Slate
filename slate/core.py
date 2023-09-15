@@ -169,6 +169,14 @@ def width(text: str | Span) -> int:
     return len(RE_ANSI.sub("", text))
 
 
+COLOR_SPACE_CASCADE = [
+    "standard",
+    "no_color",
+    "eight_bit",
+    "true_color",
+]
+
+
 class ColorSpace(Enum):
     """The color space supported by the terminal."""
 
@@ -183,6 +191,26 @@ class ColorSpace(Enum):
 
     TRUE_COLOR = "true_color"
     """Full RGB color support is available."""
+
+    def __gt__(self, other: str | ColorSpace) -> bool:
+        if isinstance(other, str):
+            other = ColorSpace(other)
+
+        return COLOR_SPACE_CASCADE.index(other.value) < COLOR_SPACE_CASCADE.index(
+            self.value
+        )
+
+    def __eq__(self, other: str | ColorSpace) -> bool:
+        if isinstance(other, str):
+            other = ColorSpace(other)
+
+        return self.value == other.value
+
+    def __ge__(self, other: str | ColorSpace) -> bool:
+        if isinstance(other, str):
+            other = ColorSpace(other)
+
+        return self > other or self == other
 
 
 def get_default_color(
