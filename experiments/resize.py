@@ -1,31 +1,49 @@
-from undertone import Span, Terminal, getch, set_echo
+from time import sleep
 
-from .markup import styled_from_markup as markup
-
-term = Terminal()
+from slate import Span, terminal, color
 
 
-def redraw(size: tuple[int, int]) -> None:
-    term.draw(redraw=True)
+def normalize(val: float, limit: int) -> int:
+    return int(val / limit * 256)
+
+
+def print_uv(size: tuple[int, int]) -> None:
+    width, height = size
+
+    for x in range(width):
+        for y in range(height):
+            col1 = color(
+                (
+                    normalize(x, width),
+                    normalize(y, height),
+                    0,
+                )
+            ).as_background()
+
+            col2 = color(
+                (
+                    normalize(x, width),
+                    normalize(y + 0.5, height),
+                    0,
+                )
+            )
+
+            terminal.write(Span("▄", foreground=col2, background=col1), cursor=(x, y))
+
+    terminal.draw(redraw=True)
 
 
 if __name__ == "__main__":
-    # Manually register redraw onto the event; this should be done by
-    # whoever is redrawing the terminal regularly.
-    term.on_resize += redraw
+    # Add the printer method as a listener to the terminal's resize event, so it gets
+    # reprinted every time we resize.
+    terminal.on_resize += print_uv
 
-    with term.alt_buffer():
-        width, height = term.size
-
-        for x in range(width):
-            for y in range(height):
-                color1 = f"{int(x / width * 256)};{int(y / height * 256)};0"
-                color2 = f"{int(x / width * 256)};{int((y + 0.5) / height * 256)};0"
-
-                term.write(markup(f"[@{color1} {color2}]▄"), cursor=(x, y))
+    with terminal.alt_buffer(), terminal.no_echo():
+        print_uv(terminal.size)
 
         while True:
             # Resize is detected manually, so we need to query for the size.
-            _ = term.size
+            _ = terminal.size
 
-            term.draw()
+            terminal.draw()
+            sleep(1 / 60)
