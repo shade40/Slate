@@ -18,8 +18,7 @@ POSIX_KEY_NAMES = {  # pylint: disable=cyclic-import
     "\x1b[1;4C": ("alt-shift-right",),
     "\x1b[1;4D": ("alt-shift-left",),
     "\x7f": ("backspace",),
-    "\b": ("alt-backspace",),
-    "\x1b\x7f": ("ctrl-backspace",),
+    "\x1b\x7f": ("alt-backspace",),
     "\x01": ("ctrl-a",),
     "\x02": ("ctrl-b",),
     "\x03": ("ctrl-c",),
@@ -27,7 +26,10 @@ POSIX_KEY_NAMES = {  # pylint: disable=cyclic-import
     "\x05": ("ctrl-e",),
     "\x06": ("ctrl-f",),
     "\x07": ("ctrl-g",),
-    "\x08": ("ctrl-h",),
+    "\x08": (
+        "ctrl-backspace",
+        "ctrl-h",
+    ),
     "\t": (
         "tab",
         "ctrl-i",
