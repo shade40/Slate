@@ -127,6 +127,7 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
     rgb: tuple[int, int, int]
     is_background: bool = False
+    alpha: float = 1.0
 
     luminance: float = field(init=False)
     brightness: float = field(init=False)
@@ -152,8 +153,17 @@ class Color:  # pylint: disable = too-many-instance-attributes
         _set_field("hls", rgb_to_hls(*(val / 256 for val in self.rgb)))
         _set_field("hex", "#" + "".join(f"{i:02X}" for i in self.rgb))
 
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}(rgb={self.rgb}, alpha={self.alpha})"
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Color):
+            return NotImplemented
+
+        return self.rgb == other.rgb and self.alpha == other.alpha
+
     @classmethod
-    def from_ansi(cls, ansi: str) -> Color:
+    def from_ansi(cls, ansi: str, alpha: float = 1.0) -> Color:
         """Creates a color instance from an ANSI sequence's body."""
 
         parts = ansi.split(";")
@@ -169,6 +179,7 @@ class Color:  # pylint: disable = too-many-instance-attributes
             return Color(
                 (int(parts[2]), int(parts[3]), int(parts[4])),
                 is_background=is_background,
+                alpha=alpha,
                 _origin_colorspace="true_color",
                 _constructor=ansi,
             )
@@ -205,12 +216,13 @@ class Color:  # pylint: disable = too-many-instance-attributes
         return Color(
             COLOR_TABLE[index],
             is_background=is_background,
+            alpha=alpha,
             _origin_colorspace=color_space,
             _constructor=ansi,
         )
 
     @classmethod
-    def from_hex(cls, hexstring: str) -> Color:
+    def from_hex(cls, hexstring: str, alpha: float = 1.0) -> Color:
         """Generates a Color instance from a hex string."""
 
         hexstring = hexstring.lstrip("#")
@@ -221,7 +233,8 @@ class Color:  # pylint: disable = too-many-instance-attributes
                 int(hexstring[2:4], base=16),
                 int(hexstring[4:], base=16),
             ),
-            _constructor=hexstring,
+            alpha=alpha,
+            _constructor="#" + hexstring,
         )
 
     @classmethod
@@ -332,6 +345,11 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
         return calculate_tetradic_group(self)
 
+    def as_alpha(self, value: float) -> Color:
+        """Returns this color with the given alpha."""
+
+        return Color(self.rgb, alpha=value, is_background=self.is_background)
+
     def lighten(self, shade_count: int, step_size: float = 0.1) -> Color:
         """Returns a lighter version of this color.
 
@@ -352,10 +370,10 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
         return self.blend(Color.black(), alpha=shade_count * step_size)
 
-    def as_background(self, setting: bool = True) -> Color:
+    def as_background(self, setting: bool = True, alpha: int | None = None) -> Color:
         """Returns this color, with the given background setting."""
 
-        return Color(self.rgb, is_background=setting)
+        return Color(self.rgb, is_background=setting, alpha=alpha or self.alpha)
 
     def hue_shift(self, amount: float) -> Color:
         """Returns a color with a hue offset of the given amount.
@@ -412,7 +430,9 @@ class Color:  # pylint: disable = too-many-instance-attributes
         return self.blend(self.complement, alpha)
 
 
-def color(description: str | tuple[int, int, int]) -> Color:
+def color(
+    description: str | tuple[int, int, int] | tuple[int, int, int, float]
+) -> Color:
     """Creates a color from the given description.
 
     This calls either the Color constructor, `Color.from_ansi` or
@@ -420,12 +440,28 @@ def color(description: str | tuple[int, int, int]) -> Color:
     """
 
     if isinstance(description, tuple):
-        return Color(description)
+        alpha = 1.0
+        triplet: tuple[int, int, int]
+
+        if len(description) == 4:
+            alpha = description[-1]
+            triplet = description[:-1]  # type: ignore
+        else:
+            triplet = description  # type: ignore
+
+        return Color(triplet, alpha=alpha)
 
     if isinstance(description, str):
         if description.startswith("#"):
-            return Color.from_hex(description)
+            alpha = 1.0
 
+            if len(description) == 9:
+                alpha = int(description[-2:], base=16) / 255
+                description = description[:-2]
+
+            return Color.from_hex(description, alpha=alpha)
+
+        # TODO: Figure out syntax for ANSI color alpha
         return Color.from_ansi(description)
 
     raise ValueError(f"unknown descriptor {description!r}")

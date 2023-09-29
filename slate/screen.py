@@ -2,10 +2,32 @@
 
 from __future__ import annotations
 
+import re
 from typing import Iterable
 
 from .color import Color
 from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
+
+
+def _get_blended(base: Color | None, other: Color | None) -> Color | None:
+    """Returns `base` blended by `other` at `other`'s alpha value."""
+
+    if base is None and other is None:
+        return None
+
+    if base is not None and other is None:
+        return base
+
+    if other is not None and base is None:
+        return other
+
+    return base.blend(other, other.alpha)  # type: ignore
+
+
+def _clean_color(text: str) -> str:
+    """Cleans colors from the given text."""
+
+    return re.sub(r"(\x1b\[[\d;]*m)*", "", text)
 
 
 class ChangeBuffer:
@@ -62,7 +84,7 @@ class Screen:
         cursor: tuple[int, int] = (0, 0),
         fillchar: str = " ",
     ) -> None:
-        self._cells: list[list[str]] = []
+        self._cells: list[list[tuple[str, Color | None, Color | None]]] = []
         self._change_buffer = ChangeBuffer()
 
         self.cursor: tuple[int, int] = cursor
@@ -82,10 +104,10 @@ class Screen:
         self._cells = []
 
         for y in range(height):
-            row = []
+            row: list[tuple[str, Color | None, Color | None]] = []
 
             for x in range(width):
-                row.append(fillchar)
+                row.append((fillchar, None, None))
                 self._change_buffer[x, y] = fillchar
 
             self._cells.append(row)
@@ -94,11 +116,11 @@ class Screen:
             if y >= height:
                 break
 
-            for x, span in enumerate(row):
+            for x, (span, fore, back) in enumerate(row):
                 if x >= width:
                     break
 
-                self._cells[y][x] = span
+                self._cells[y][x] = span, fore, back
 
         self.width = width
         self.height = height
@@ -110,7 +132,10 @@ class Screen:
             fillchar: The character to fill the matrix with.
         """
 
-        filler = Span(fillchar)
+        if not isinstance(fillchar, Span):
+            filler = Span(fillchar)
+        else:
+            filler = fillchar
 
         for y, row in enumerate(self._cells):
             for x in range(len(row)):
@@ -118,7 +143,7 @@ class Screen:
 
         self.cursor = (0, 0)
 
-    def write(
+    def write(  # pylint: disable=too-many-branches,too-many-locals
         self,
         spans: Iterable[Span],
         cursor: tuple[int, int] | None = None,
@@ -142,7 +167,7 @@ class Screen:
         changes = 0
 
         for span in spans:
-            for char in span.get_characters(always_include_sequence=True):
+            for i, char in enumerate(span.get_characters(always_include_sequence=True)):
                 if self.width <= x or x < 0 or self.height <= y or y < 0:
                     break
 
@@ -156,8 +181,47 @@ class Screen:
                     next_y += 1
                     next_x = 0
 
-                if force_overwrite or self._cells[y][x] != char:
-                    self._cells[y][x] = char
+                new = (char, span.foreground, span.background)
+                current = self._cells[y][x]
+
+                if force_overwrite or current != new:
+                    foreground = span.foreground or current[1]
+                    background = _get_blended(current[2], span.background)
+
+                    if (
+                        span[i].text == " "
+                        and span.background
+                        and span.background.alpha != 1.0
+                    ):
+                        char = _clean_color(current[0])
+                        foreground = _get_blended(current[1], span.background)
+
+                    elif background is not None:
+                        foreground = _get_blended(
+                            background.as_background(False), foreground
+                        )
+
+                    elif foreground is not None:
+                        foreground = foreground.blend(
+                            foreground.contrast, 1 - foreground.alpha
+                        )
+
+                    self._cells[y][x] = (new[0], foreground, background)
+
+                    color = ""
+
+                    if foreground is not None:
+                        color += foreground.ansi
+
+                    if background is not None:
+                        color += (";" if color else "") + background.ansi
+
+                    if color != "":
+                        if "\x1b[" in char:
+                            char = _clean_color(char)
+
+                        char = f"\x1b[{color}m{char}"
+
                     self._change_buffer[x, y] = char
 
                     changes += 1
@@ -180,7 +244,7 @@ class Screen:
             buffer = ""
 
             for row in self._cells:
-                buffer += f"\x1b[{y};{x}H" + "".join(map(str, row))
+                buffer += f"\x1b[{y};{x}H" + "".join(str(item) for item, *_ in row)
                 y += 1
 
             self._change_buffer.clear()
@@ -267,7 +331,7 @@ class Screen:
 
         i = 0
         for row in self._cells:
-            for span in Span.group(row):
+            for span in Span.group([span for span, *_ in row]):
                 if previous_attrs != span.attrs:
                     i += 1
 

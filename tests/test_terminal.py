@@ -21,7 +21,7 @@ def test_terminal_clear():
 
     term.write("X", cursor=(0, 0))
     term.clear(fillchar="O")
-    assert term._screen._cells[0][0] == "O"
+    assert term._screen._cells[0][0] == ("O", None, None)
 
 
 def test_terminal_write_control():
@@ -74,11 +74,11 @@ def test_terminal_write_diff_types():
     terminal.write("\x1b[38;5;141;1;2mHello")
 
     assert terminal._screen._cells[0][0:5] == [
-        "\x1b[38;5;141;1;2mH",
-        "\x1b[38;5;141;1;2me",
-        "\x1b[38;5;141;1;2ml",
-        "\x1b[38;5;141;1;2ml",
-        "\x1b[38;5;141;1;2mo\x1b[0m",
+        ("\x1b[38;5;141;1;2mH", color("38;5;141"), None),
+        ("\x1b[38;5;141;1;2me", color("38;5;141"), None),
+        ("\x1b[38;5;141;1;2ml", color("38;5;141"), None),
+        ("\x1b[38;5;141;1;2ml", color("38;5;141"), None),
+        ("\x1b[38;5;141;1;2mo\x1b[0m", color("38;5;141"), None),
     ]
 
     changes = terminal.write(

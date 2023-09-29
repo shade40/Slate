@@ -1,4 +1,4 @@
-from slate import Screen, Span
+from slate import Screen, Span, color, Color
 
 
 def test_screen_resize():
@@ -8,7 +8,7 @@ def test_screen_resize():
 
     screen.resize((15, 15))
 
-    assert screen._cells[9][9] == "X"
+    assert screen._cells[9][9] == ("X", None, None)
 
     screen.resize((5, 5))
 
@@ -19,7 +19,7 @@ def test_screen_clear():
     screen.clear(fillchar="X")
     print(screen._cells)
 
-    assert all(all(cell == "X" for cell in row) for row in screen._cells)
+    assert all(all(cell == ("X", None, None) for cell in row) for row in screen._cells)
 
 
 def test_screen_write():
@@ -34,6 +34,99 @@ def test_screen_write():
 
     changes = screen.write([Span("OOB")], cursor=(10, 10))
     assert changes == 0
+
+
+def test_screen_opacity():
+    screen = Screen(5, 5)
+
+    screen.write(Span("Secret", foreground=color("#ffffff77")))
+    screen.cursor = (0, 0)
+    screen.write(Span(" e r t", background=color("#31213477")))
+
+    print(screen._cells)
+    assert screen._cells == [
+        [
+            (
+                "\x1b[90m \x1b[0m",
+                Color(
+                    rgb=(95, 88, 97),
+                ),
+                Color(
+                    rgb=(49, 33, 52),
+                    alpha=0.4666666666666667,
+                ),
+            ),
+            (
+                "\x1b[90me\x1b[0m",
+                Color(rgb=(137, 137, 137)),
+                Color(
+                    rgb=(49, 33, 52),
+                    alpha=0.4666666666666667,
+                ),
+            ),
+            (
+                "\x1b[90m \x1b[0m",
+                Color(rgb=(95, 88, 97)),
+                Color(
+                    rgb=(49, 33, 52),
+                    alpha=0.4666666666666667,
+                ),
+            ),
+            (
+                "\x1b[90mr\x1b[0m",
+                Color(rgb=(137, 137, 137)),
+                Color(
+                    rgb=(49, 33, 52),
+                    alpha=0.4666666666666667,
+                ),
+            ),
+            (
+                "\x1b[90m \x1b[0m",
+                Color(rgb=(95, 88, 97)),
+                Color(
+                    rgb=(49, 33, 52),
+                    alpha=0.4666666666666667,
+                ),
+            ),
+        ],
+        [
+            (
+                "\x1b[90mt\x1b[0m",
+                Color(
+                    rgb=(137, 137, 137),
+                ),
+                Color(
+                    rgb=(49, 33, 52),
+                    alpha=0.4666666666666667,
+                ),
+            ),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+        ],
+        [
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+        ],
+        [
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+        ],
+        [
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+            (" ", None, None),
+        ],
+    ]
 
 
 def test_screen_render():
