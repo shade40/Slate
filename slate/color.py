@@ -154,7 +154,11 @@ class Color:  # pylint: disable = too-many-instance-attributes
         _set_field("hex", "#" + "".join(f"{i:02X}" for i in self.rgb))
 
     def __repr__(self) -> str:
-        return f"{type(self).__name__}(rgb={self.rgb}, alpha={self.alpha})"
+        return (
+            f"{type(self).__name__}(rgb={self.rgb}"
+            + f", alpha={self.alpha}" * (self.alpha != 1.0)
+            + ")"
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, Color):

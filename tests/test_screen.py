@@ -41,64 +41,48 @@ def test_screen_opacity():
 
     screen.write(Span("Secret", foreground=color("#ffffff77")))
     screen.cursor = (0, 0)
-    screen.write(Span(" e r t", background=color("#31213477")))
+    screen.write(
+        Span(
+            " e r t",
+            foreground=color("#ffffff22"),
+            background=color("#31213477").as_background(),
+        )
+    )
 
     print(screen._cells)
     assert screen._cells == [
         [
             (
-                "\x1b[90m \x1b[0m",
-                Color(
-                    rgb=(95, 88, 97),
-                ),
-                Color(
-                    rgb=(49, 33, 52),
-                    alpha=0.4666666666666667,
-                ),
-            ),
-            (
-                "\x1b[90me\x1b[0m",
-                Color(rgb=(137, 137, 137)),
-                Color(
-                    rgb=(49, 33, 52),
-                    alpha=0.4666666666666667,
-                ),
-            ),
-            (
-                "\x1b[90m \x1b[0m",
+                "S",
                 Color(rgb=(95, 88, 97)),
-                Color(
-                    rgb=(49, 33, 52),
-                    alpha=0.4666666666666667,
-                ),
+                Color(rgb=(49, 33, 52), alpha=0.4666666666666667),
             ),
             (
-                "\x1b[90mr\x1b[0m",
-                Color(rgb=(137, 137, 137)),
-                Color(
-                    rgb=(49, 33, 52),
-                    alpha=0.4666666666666667,
-                ),
+                "e",
+                Color(rgb=(76, 62, 79)),
+                Color(rgb=(49, 33, 52), alpha=0.4666666666666667),
             ),
             (
-                "\x1b[90m \x1b[0m",
+                "c",
                 Color(rgb=(95, 88, 97)),
-                Color(
-                    rgb=(49, 33, 52),
-                    alpha=0.4666666666666667,
-                ),
+                Color(rgb=(49, 33, 52), alpha=0.4666666666666667),
+            ),
+            (
+                "r",
+                Color(rgb=(76, 62, 79)),
+                Color(rgb=(49, 33, 52), alpha=0.4666666666666667),
+            ),
+            (
+                "e",
+                Color(rgb=(95, 88, 97)),
+                Color(rgb=(49, 33, 52), alpha=0.4666666666666667),
             ),
         ],
         [
             (
-                "\x1b[90mt\x1b[0m",
-                Color(
-                    rgb=(137, 137, 137),
-                ),
-                Color(
-                    rgb=(49, 33, 52),
-                    alpha=0.4666666666666667,
-                ),
+                "t",
+                Color(rgb=(76, 62, 79)),
+                Color(rgb=(49, 33, 52), alpha=0.4666666666666667),
             ),
             (" ", None, None),
             (" ", None, None),

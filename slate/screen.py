@@ -167,7 +167,20 @@ class Screen:
         changes = 0
 
         for span in spans:
-            for i, char in enumerate(span.get_characters(always_include_sequence=True)):
+            foreground, background = span.foreground, span.background
+
+            if foreground is not None and foreground.alpha != 1.0:
+                foreground = (
+                    foreground.blend(foreground.contrast, 1 - foreground.alpha)
+                    if background is None
+                    else _get_blended(background.as_background(False), foreground)
+                )
+
+            bg_has_alpha = background is not None and background.alpha != 1.0
+
+            for i, char in enumerate(
+                span.get_characters(exclude_color=True, always_include_sequence=True)
+            ):
                 if self.width <= x or x < 0 or self.height <= y or y < 0:
                     break
 
@@ -185,41 +198,21 @@ class Screen:
                 current = self._cells[y][x]
 
                 if force_overwrite or current != new:
-                    foreground = span.foreground or current[1]
-                    background = _get_blended(current[2], span.background)
+                    if bg_has_alpha:
+                        top = background
+                        background = _get_blended(current[2], top)
 
-                    if (
-                        span[i].text == " "
-                        and span.background
-                        and span.background.alpha != 1.0
-                    ):
-                        char = _clean_color(current[0])
-                        foreground = _get_blended(current[1], span.background)
+                        if span[i].text == " ":
+                            char = current[0]
+                            foreground = _get_blended(current[1], top)
 
-                    elif background is not None:
-                        foreground = _get_blended(
-                            background.as_background(False), foreground
-                        )
+                    self._cells[y][x] = (char, foreground, background)
 
-                    elif foreground is not None:
-                        foreground = foreground.blend(
-                            foreground.contrast, 1 - foreground.alpha
-                        )
+                    color = (
+                        foreground.ansi + ";" if foreground is not None else ""
+                    ) + (background.ansi if background is not None else "")
 
-                    self._cells[y][x] = (new[0], foreground, background)
-
-                    color = ""
-
-                    if foreground is not None:
-                        color += foreground.ansi
-
-                    if background is not None:
-                        color += (";" if color else "") + background.ansi
-
-                    if color != "":
-                        if "\x1b[" in char:
-                            char = _clean_color(char)
-
+                    if color:
                         char = f"\x1b[{color}m{char}"
 
                     self._change_buffer[x, y] = char

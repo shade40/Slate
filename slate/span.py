@@ -233,9 +233,10 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
     _computed: str = field(init=False)
     _sequences: str = field(init=False)
+    _colorless_sequences: str = field(init=False)
 
     def __post_init__(self) -> None:
-        sequences = self._generate_sequences()
+        sequences, colorless_sequences = self._generate_sequences()
         reset_end = "\x1b[0m" if self.reset_after and sequences != "" else ""
 
         combined = sequences + self.text + reset_end
@@ -245,6 +246,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         object.__setattr__(self, "_computed", combined)
         object.__setattr__(self, "_sequences", sequences)
+        object.__setattr__(self, "_colorless_sequences", colorless_sequences)
 
     def __str__(self) -> str:
         return self._computed
@@ -278,20 +280,10 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         return f"{name}({attributes})"
 
-    def _generate_sequences(self) -> str:
+    def _generate_sequences(self) -> tuple[str, str]:
         """Generates the sequences represented by this Span."""
 
-        colors = []
-        if self.foreground is not None:
-            colors.append(self.foreground.ansi)
-
-        if self.background is not None:
-            colors.append(self.background.ansi)
-
-        sequences = ";".join(colors)
-
-        if len(sequences) > 0:
-            sequences += ";"
+        sequences = ""
 
         for fld in fields(self):
             if not (fld.name in SETTERS and getattr(self, fld.name)):
@@ -299,10 +291,25 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
             sequences += SETTERS[fld.name] + ";"
 
-        if sequences == "":
-            return ""
+        colorless = sequences.strip(";")
 
-        return f"\x1b[{sequences.strip(';')}m"
+        colors = []
+
+        if self.foreground is not None:
+            colors.append(self.foreground.ansi)
+
+        if self.background is not None:
+            colors.append(self.background.ansi)
+
+        total = ";".join(colors)
+
+        if colorless:
+            total += ";" * (len(total) != 0) + colorless
+
+        return (
+            f"\x1b[{total}m" if total else "",
+            f"\x1b[{colorless}m" if colorless else "",
+        )
 
     @property
     def attrs(self) -> SpanConfig:
@@ -398,7 +405,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
             yield group
 
     def get_characters(
-        self, always_include_sequence: bool = False
+        self, exclude_color: bool = False, always_include_sequence: bool = False
     ) -> Generator[str, None, None]:
         """Splits the Span into its characters.
 
@@ -410,7 +417,9 @@ class Span:  # pylint: disable=too-many-instance-attributes
             Strings with the format `{sequences}{plain_character}`.
         """
 
-        remaining_sequences = self._sequences
+        sequences = self._colorless_sequences if exclude_color else self._sequences
+        remaining_sequences = sequences
+
         for char in self.text[:-1]:
             yield remaining_sequences + char
 
@@ -422,7 +431,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
         last = self.text[-1]
 
-        if self._sequences != "" and self.reset_after:
+        if sequences != "" and self.reset_after:
             last = remaining_sequences + last + "\x1b[0m"
 
         yield last

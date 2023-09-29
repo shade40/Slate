@@ -74,11 +74,11 @@ def test_terminal_write_diff_types():
     terminal.write("\x1b[38;5;141;1;2mHello")
 
     assert terminal._screen._cells[0][0:5] == [
-        ("\x1b[38;5;141;1;2mH", color("38;5;141"), None),
-        ("\x1b[38;5;141;1;2me", color("38;5;141"), None),
-        ("\x1b[38;5;141;1;2ml", color("38;5;141"), None),
-        ("\x1b[38;5;141;1;2ml", color("38;5;141"), None),
-        ("\x1b[38;5;141;1;2mo\x1b[0m", color("38;5;141"), None),
+        ("\x1b[1;2mH", color("38;5;141"), None),
+        ("\x1b[1;2me", color("38;5;141"), None),
+        ("\x1b[1;2ml", color("38;5;141"), None),
+        ("\x1b[1;2ml", color("38;5;141"), None),
+        ("\x1b[1;2mo\x1b[0m", color("38;5;141"), None),
     ]
 
     changes = terminal.write(
