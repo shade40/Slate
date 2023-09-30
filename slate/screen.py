@@ -2,14 +2,15 @@
 
 from __future__ import annotations
 
-import re
 from typing import Iterable
 
 from .color import Color
 from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
 
 
-def _get_blended(base: Color | None, other: Color | None) -> Color | None:
+def _get_blended(
+    base: Color | None, other: Color | None, is_background: bool | None = None
+) -> Color | None:
     """Returns `base` blended by `other` at `other`'s alpha value."""
 
     if base is None and other is None:
@@ -21,13 +22,7 @@ def _get_blended(base: Color | None, other: Color | None) -> Color | None:
     if other is not None and base is None:
         return other
 
-    return base.blend(other, other.alpha)  # type: ignore
-
-
-def _clean_color(text: str) -> str:
-    """Cleans colors from the given text."""
-
-    return re.sub(r"(\x1b\[[\d;]*m)*", "", text)
+    return base.blend(other, other.alpha, is_background=is_background)  # type: ignore
 
 
 class ChangeBuffer:
@@ -167,16 +162,10 @@ class Screen:
         changes = 0
 
         for span in spans:
-            foreground, background = span.foreground, span.background
+            s_foreground, s_background = span.foreground, span.background
 
-            if foreground is not None and foreground.alpha != 1.0:
-                foreground = (
-                    foreground.blend(foreground.contrast, 1 - foreground.alpha)
-                    if background is None
-                    else _get_blended(background.as_background(False), foreground)
-                )
-
-            bg_has_alpha = background is not None and background.alpha != 1.0
+            fg_has_alpha = s_foreground is not None and s_foreground.alpha != 1.0
+            bg_has_alpha = s_background is not None and s_background.alpha != 1.0
 
             for i, char in enumerate(
                 span.get_characters(exclude_color=True, always_include_sequence=True)
@@ -197,14 +186,25 @@ class Screen:
                 new = (char, span.foreground, span.background)
                 current = self._cells[y][x]
 
+                foreground, background = s_foreground, s_background
+
                 if force_overwrite or current != new:
                     if bg_has_alpha:
                         top = background
                         background = _get_blended(current[2], top)
 
-                        if span[i].text == " ":
+                        if span.text[i] == " ":
                             char = current[0]
                             foreground = _get_blended(current[1], top)
+
+                    if fg_has_alpha:
+                        foreground = (
+                            foreground.blend(foreground.contrast, 1 - foreground.alpha)
+                            if background is None
+                            else _get_blended(
+                                background, foreground, is_background=False
+                            )
+                        )
 
                     self._cells[y][x] = (char, foreground, background)
 

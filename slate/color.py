@@ -382,6 +382,9 @@ class Color:  # pylint: disable = too-many-instance-attributes
     def as_background(self, setting: bool = True, alpha: int | None = None) -> Color:
         """Returns this color, with the given background setting."""
 
+        if self.is_background == setting:
+            return self
+
         return Color(self.rgb, is_background=setting, alpha=alpha or self.alpha)
 
     def hue_shift(self, amount: float) -> Color:
@@ -403,7 +406,9 @@ class Color:  # pylint: disable = too-many-instance-attributes
         )
 
     @lru_cache
-    def blend(self, other: Color, alpha: float) -> Color:
+    def blend(
+        self, other: Color, alpha: float, is_background: bool | None = None
+    ) -> Color:
         """Blends this color with other by a certain alpha.
 
         Args:
@@ -415,6 +420,9 @@ class Color:  # pylint: disable = too-many-instance-attributes
             The blended color.
         """
 
+        if is_background is None:
+            is_background = self.is_background
+
         red1, green1, blue1 = self.rgb
         red2, green2, blue2 = other.rgb
 
@@ -424,7 +432,7 @@ class Color:  # pylint: disable = too-many-instance-attributes
                 int(green1 + (green2 - green1) * alpha),
                 int(blue1 + (blue2 - blue1) * alpha),
             ),
-            is_background=self.is_background,
+            is_background=is_background,
         )
 
     def blend_complement(self, alpha: float) -> Color:

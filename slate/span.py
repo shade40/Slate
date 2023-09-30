@@ -240,6 +240,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
     _computed: str = field(init=False)
     _sequences: str = field(init=False)
     _colorless_sequences: str = field(init=False)
+    _characters: list[str] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
         sequences, colorless_sequences = self._generate_sequences()
@@ -423,24 +424,28 @@ class Span:  # pylint: disable=too-many-instance-attributes
             Strings with the format `{sequences}{plain_character}`.
         """
 
+        if len(self._characters):
+            yield from self._characters
+            return
+
         sequences = self._colorless_sequences if exclude_color else self._sequences
         remaining_sequences = sequences
 
         for char in self.text[:-1]:
-            yield remaining_sequences + char
+            self._characters.append(remaining_sequences + char)
 
             if not always_include_sequence:
                 remaining_sequences = ""
 
-        if self.text == "":
-            return
+        if self.text != "":
+            last = self.text[-1]
 
-        last = self.text[-1]
+            if sequences != "" and self.reset_after:
+                last = remaining_sequences + last + "\x1b[0m"
 
-        if sequences != "" and self.reset_after:
-            last = remaining_sequences + last + "\x1b[0m"
+            self._characters.append(last)
 
-        yield last
+        yield from self._characters
 
     def get_svg_styles(self) -> dict[str, str]:
         """Returns this span's styling converted to SVG-compatible CSS."""
