@@ -134,10 +134,10 @@ def _is_valid_color(body: str) -> bool:
     parts = body.split(";")
 
     if parts[1] == "2":
-        return len(parts) == 5
+        return len(parts) in [5, 6]
 
     if parts[1] == "5":
-        return len(parts) == 3
+        return len(parts) in [3, 4]
 
     return False
 
@@ -156,7 +156,9 @@ def _parse_sequence(
     in_color = False
     color_buffer = ""
 
-    for part in seq.split(";"):
+    parts = seq.split(";")
+
+    for i, part in enumerate(parts):
         if (
             part.isdigit()
             and int(part) in chain(range(30, 49), range(90, 108))
@@ -167,7 +169,11 @@ def _parse_sequence(
         if in_color:
             color_buffer += part
 
-            if _is_valid_color(color_buffer):
+            if (
+                _is_valid_color(color_buffer)
+                and len(parts) > i + 1
+                and "." not in parts[i + 1]
+            ):
                 key = (
                     "back" if _is_background_color(color_buffer) else "fore"
                 ) + "ground"

@@ -145,7 +145,8 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
         if any(not 0 <= val < 256 for val in self.rgb):
             raise ValueError(
-                f"Color RGB values must be between 0 and 256, got {self.rgb!r}."
+                f"Color RGB values must be between 0 and 256,"
+                + f" got {self.rgb!r} from {self._constructor!r}.",
             )
 
         _set_field("luminance", calculate_luminance(self))
@@ -167,10 +168,11 @@ class Color:  # pylint: disable = too-many-instance-attributes
         return self.rgb == other.rgb and self.alpha == other.alpha
 
     @classmethod
-    def from_ansi(cls, ansi: str, alpha: float = 1.0) -> Color:
+    def from_ansi(cls, ansi: str) -> Color:
         """Creates a color instance from an ANSI sequence's body."""
 
         parts = ansi.split(";")
+        alpha = 1.0
         is_background = parts[0].startswith("4")
 
         if len(parts) > 3:
@@ -179,6 +181,9 @@ class Color:  # pylint: disable = too-many-instance-attributes
                     "Only colors with prefixes `38;2` and `48;2` are allowed,"
                     + f" got {ansi!r}."
                 )
+
+            if len(parts) > 5:
+                alpha = float(parts[5])
 
             return Color(
                 (int(parts[2]), int(parts[3]), int(parts[4])),
