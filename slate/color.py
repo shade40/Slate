@@ -145,7 +145,7 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
         if any(not 0 <= val < 256 for val in self.rgb):
             raise ValueError(
-                f"Color RGB values must be between 0 and 256,"
+                "Color RGB values must be between 0 and 256,"
                 + f" got {self.rgb!r} from {self._constructor!r}.",
             )
 
