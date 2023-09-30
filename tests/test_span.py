@@ -41,7 +41,13 @@ def test_span_foreground_background_guess():
 
 def test_span_yield_from():
     def _equals(line: str, expected: list[Span]) -> bool:
-        return list(Span.yield_from(line)) == expected
+        output = [*Span.yield_from(line)]
+
+        if not output == expected:
+            print(output)
+            return False
+
+        return True
 
     assert _equals(
         "Test empty",

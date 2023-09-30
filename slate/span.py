@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field, fields
+from functools import lru_cache
 from itertools import chain
 from typing import Any, Generator, Iterable, TypedDict
 from html import escape
@@ -169,10 +170,8 @@ def _parse_sequence(
         if in_color:
             color_buffer += part
 
-            if (
-                _is_valid_color(color_buffer)
-                and len(parts) > i + 1
-                and "." not in parts[i + 1]
+            if _is_valid_color(color_buffer) and (
+                len(parts) >= i or "." not in parts[i + 1]
             ):
                 key = (
                     "back" if _is_background_color(color_buffer) else "fore"
@@ -240,7 +239,6 @@ class Span:  # pylint: disable=too-many-instance-attributes
     _computed: str = field(init=False)
     _sequences: str = field(init=False)
     _colorless_sequences: str = field(init=False)
-    _characters: list[str] = field(init=False, default_factory=list)
 
     def __post_init__(self) -> None:
         sequences, colorless_sequences = self._generate_sequences()
@@ -411,28 +409,27 @@ class Span:  # pylint: disable=too-many-instance-attributes
         if group is not None:
             yield group
 
+    @lru_cache
     def get_characters(
         self, exclude_color: bool = False, always_include_sequence: bool = False
-    ) -> Generator[str, None, None]:
+    ) -> list[str]:
         """Splits the Span into its characters.
 
         Args:
             always_include_sequence: Include the span's sequences before every
                 character. If not set, only the first character will have them.
 
-        Yields:
-            Strings with the format `{sequences}{plain_character}`.
+        Returns:
+            A list of strings with the format `{sequences}{plain_character}`.
         """
-
-        if len(self._characters):
-            yield from self._characters
-            return
 
         sequences = self._colorless_sequences if exclude_color else self._sequences
         remaining_sequences = sequences
 
+        chars = []
+
         for char in self.text[:-1]:
-            self._characters.append(remaining_sequences + char)
+            chars.append(remaining_sequences + char)
 
             if not always_include_sequence:
                 remaining_sequences = ""
@@ -443,9 +440,9 @@ class Span:  # pylint: disable=too-many-instance-attributes
             if sequences != "" and self.reset_after:
                 last = remaining_sequences + last + "\x1b[0m"
 
-            self._characters.append(last)
+            chars.append(last)
 
-        yield from self._characters
+        return chars
 
     def get_svg_styles(self) -> dict[str, str]:
         """Returns this span's styling converted to SVG-compatible CSS."""
