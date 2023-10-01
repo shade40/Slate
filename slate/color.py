@@ -184,6 +184,7 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
             if len(parts) > 5:
                 alpha = float(parts[5])
+                ansi = ansi[: len(parts[5])]
 
             return Color(
                 (int(parts[2]), int(parts[3]), int(parts[4])),

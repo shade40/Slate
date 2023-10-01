@@ -199,12 +199,17 @@ class Screen:
 
                     if fg_has_alpha:
                         foreground = (
-                            foreground.blend(foreground.contrast, 1 - foreground.alpha)
-                            if background is None
+                            foreground.blend(
+                                foreground.contrast, max(1 - foreground.alpha, 0)
+                            )
+                            if foreground is not None and background is None
                             else _get_blended(
                                 background, foreground, is_background=False
                             )
                         )
+
+                    foreground = foreground or current[1]
+                    background = background or current[2]
 
                     self._cells[y][x] = (char, foreground, background)
 
