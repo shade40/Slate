@@ -173,6 +173,11 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
         parts = ansi.split(";")
         alpha = 1.0
+
+        if "." in parts[-1]:
+            alpha = float(parts[-1])
+            parts.pop()
+
         is_background = parts[0].startswith("4")
 
         if len(parts) > 3:
@@ -182,16 +187,12 @@ class Color:  # pylint: disable = too-many-instance-attributes
                     + f" got {ansi!r}."
                 )
 
-            if len(parts) > 5:
-                alpha = float(parts[5])
-                ansi = ansi[: len(parts[5])]
-
             return Color(
                 (int(parts[2]), int(parts[3]), int(parts[4])),
                 is_background=is_background,
                 alpha=alpha,
                 _origin_colorspace="true_color",
-                _constructor=ansi,
+                _constructor=";".join(parts),
             )
 
         end = parts[-1]
