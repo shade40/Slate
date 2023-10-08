@@ -26,25 +26,18 @@ def _get_blended(
 
 
 class ChangeBuffer:
-    """A simple class to allow for no-duplicate double buffering.
+    """A simple class that keeps track of x, y positions of changed characters."""
 
-    Creating a custom class that uses setattr is a bit better than using dicts or
-    filtering, as they either have performance overheads or involve cumbersome resizing.
-    """
+    def __init__(self) -> None:
+        self._data: dict[tuple[int, int], str] = {}
 
     def __setitem__(self, indices: tuple[int, int], value: str) -> None:
-        setattr(self, f"_item_{'_'.join(map(str, indices))}", value)
-
-    def _get_items(self) -> Iterable[str]:
-        """Gets a list of custom-set attributes."""
-
-        return filter(lambda item: item.startswith("_item_"), dir(self))
+        self._data[indices] = value
 
     def clear(self) -> None:
         """Clears the buffer."""
 
-        for attr in self._get_items():
-            delattr(self, attr)
+        self._data.clear()
 
     def gather(self) -> list[tuple[tuple[int, int], str]]:
         """Gathers all changes.
@@ -56,12 +49,7 @@ class ChangeBuffer:
 
         """
 
-        items: list[tuple[tuple[int, int], str]] = []
-
-        for attr in self._get_items():
-            x, y = map(int, attr.lstrip("_item_").split("_"))
-            items.append(((x, y), getattr(self, attr)))
-
+        items: list[tuple[tuple[int, int], str]] = [*self._data.items()]
         return sorted(items, key=lambda item: (item[0][1], item[0][0]))
 
 
@@ -86,39 +74,45 @@ class Screen:
 
         self.resize((width, height), fillchar)
 
-    def resize(self, size: tuple[int, int], fillchar: str = " ") -> None:
+    def resize(
+        self, size: tuple[int, int], fillchar: str = " ", keep_original: bool = True
+    ) -> None:
         """Resizes the cell matrix to a new size.
 
         Args:
             size: The new size.
         """
 
-        old_cells = self._cells
         width, height = size
 
-        self._cells = []
+        cells: list[list[tuple[str, Color | None, Color | None]]] = []
+        cells_append = cells.append
+        change_buffer = self._change_buffer.__setitem__
 
         for y in range(height):
             row: list[tuple[str, Color | None, Color | None]] = []
 
             for x in range(width):
                 row.append((fillchar, None, None))
-                self._change_buffer[x, y] = fillchar
+                change_buffer((x, y), fillchar)
 
-            self._cells.append(row)
+            cells_append(row)
 
-        for y, row in enumerate(old_cells):
-            if y >= height:
-                break
-
-            for x, (span, fore, back) in enumerate(row):
-                if x >= width:
+        if keep_original:
+            for y, row in enumerate(self._cells):
+                if y >= height:
                     break
 
-                self._cells[y][x] = span, fore, back
+                for x, (char, fore, back) in enumerate(row):
+                    if x >= width:
+                        break
+
+                    cells[y][x] = char, fore, back
 
         self.width = width
         self.height = height
+
+        self._cells = cells
 
     def clear(self, fillchar: str = " ") -> None:
         """Clears the screen's entire matrix.
@@ -127,15 +121,7 @@ class Screen:
             fillchar: The character to fill the matrix with.
         """
 
-        if not isinstance(fillchar, Span):
-            filler = Span(fillchar)
-        else:
-            filler = fillchar
-
-        for y, row in enumerate(self._cells):
-            for x in range(len(row)):
-                self.write([filler], cursor=(x, y))
-
+        self.resize((self.width, self.height), fillchar, keep_original=False)
         self.cursor = (0, 0)
 
     def write(  # pylint: disable=too-many-branches,too-many-locals
@@ -238,6 +224,7 @@ class Screen:
         """
 
         x, y = origin
+
         if redraw:
             buffer = ""
 
