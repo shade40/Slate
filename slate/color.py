@@ -8,7 +8,7 @@ from functools import cached_property, lru_cache
 from math import sqrt
 from typing import TYPE_CHECKING
 
-from .color_info import COLOR_TABLE
+from .color_info import COLOR_TABLE, NAMED_COLORS
 
 
 if TYPE_CHECKING:
@@ -168,15 +168,10 @@ class Color:  # pylint: disable = too-many-instance-attributes
         return self.rgb == other.rgb and self.alpha == other.alpha
 
     @classmethod
-    def from_ansi(cls, ansi: str) -> Color:
+    def from_ansi(cls, ansi: str, alpha: float = 1.0) -> Color:
         """Creates a color instance from an ANSI sequence's body."""
 
         parts = ansi.split(";")
-        alpha = 1.0
-
-        if "." in parts[-1]:
-            alpha = float(parts[-1])
-            parts.pop()
 
         is_background = parts[0].startswith("4")
 
@@ -480,8 +475,17 @@ def color(
 
             return Color.from_hex(description, alpha=alpha)
 
-        # TODO: Figure out syntax for ANSI color alpha
-        return Color.from_ansi(description)
+        alpha = 1.0
+        parts = description.split(";")
+
+        if "." in parts[-1]:
+            description = ";".join(parts[:-1])
+            alpha = float(parts[-1])
+
+        if description in NAMED_COLORS:
+            return Color.from_hex(NAMED_COLORS[description], alpha=alpha)
+
+        return Color.from_ansi(description, alpha=alpha)
 
     raise ValueError(f"unknown descriptor {description!r}")
 
