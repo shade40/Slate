@@ -173,6 +173,10 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
         parts = ansi.split(";")
 
+        if "." in parts[-1]:
+            alpha = float(parts[-1])
+            parts.pop()
+
         is_background = parts[0].startswith("4")
 
         if len(parts) > 3:
