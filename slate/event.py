@@ -40,7 +40,7 @@ class Event:
         if not callable(callback):
             raise ValueError(f"Invalid type for callback: {callback}")
 
-        self._listeners.append(callback)
+        self.append(callback)
 
         return self
 
@@ -69,6 +69,11 @@ class Event:
                 ) from exc
 
         return output
+
+    def append(self, callback: EventCallback) -> None:
+        """Adds a new listener."""
+
+        self._listeners.append(callback)
 
     def clear(self) -> None:
         """Removes all listeners from th event."""
