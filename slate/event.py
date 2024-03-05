@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any, Callable, Union, Optional, TypeVar, Generic
-
-EventCallback = Union[Callable[[], Optional[bool]], Callable[[Any], Optional[bool]]]
+from typing import Callable, TypeVar, Generic
 
 __all__ = [
     "Event",
-    "EventCallback",
     "CallbackError",
 ]
 
