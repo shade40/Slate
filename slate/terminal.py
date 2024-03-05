@@ -67,8 +67,8 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
     origin: tuple[int, int] = (1, 1)
     resolution_fallback: tuple[int, int] = (1280, 720)
 
-    on_resize: Event = field(init=False)
-    on_color_space_set: Event = field(init=False)
+    on_resize: Event[tuple[int, int]] = field(init=False)
+    on_color_space_set: Event[ColorSpace | None] = field(init=False)
 
     _screen: Screen = field(init=False)
     _previous_size: tuple[int, int] | None = None
@@ -79,8 +79,13 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         self._screen = Screen(*self.size)
 
         self.on_resize = Event("terminal resized")
-        self.on_resize += self._screen.resize
 
+        def _on_resize(data: tuple[int, int]) -> bool:
+            self._screen.resize(data)
+
+            return True
+
+        self.on_resize += _on_resize
         self.on_color_space_set = Event("color space set")
 
     @property
@@ -100,7 +105,7 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         """Overrides the queried color space setting."""
 
         self._forced_color_space = new
-        self.on_color_space_set()
+        self.on_color_space_set(new)
 
     @cached_property
     def supports_synchronized_update(self) -> bool:  # no-cov

@@ -4,8 +4,10 @@ from slate.event import CallbackError, Event
 
 
 def test_event_emit():
-    def _callback(data: str):
+    def _callback(data: str) -> bool:
         assert data == "this is a test"
+
+        return True
 
     test = Event("Test 1")
     test += _callback
