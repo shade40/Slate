@@ -3,7 +3,7 @@ from slate import Span, terminal, getch, set_echo
 
 def main() -> None:
     with terminal.no_echo(), terminal.alt_buffer(), terminal.report_mouse():
-        while key := getch():
+        while key := str(getch()):
             if key == "ctrl-c":
                 break
 
