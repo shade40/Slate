@@ -58,7 +58,7 @@ class Event(Generic[T]):
 
         for callback in self._listeners:
             try:
-                output |= callback(data)
+                output |= callback(data) or True
 
             except Exception as exc:
                 raise CallbackError(
