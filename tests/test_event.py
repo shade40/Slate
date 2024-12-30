@@ -1,6 +1,6 @@
 import pytest
 
-from slate.event import CallbackError, Event
+from slate.event import Event
 
 
 def test_event_emit():
@@ -30,5 +30,5 @@ def test_event_callback_error():
 
     test += _bad_callback
 
-    with pytest.raises(CallbackError):
+    with pytest.raises(ZeroDivisionError):
         test("whatever")

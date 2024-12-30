@@ -7,12 +7,7 @@ from typing import Callable, TypeVar, Generic
 
 __all__ = [
     "Event",
-    "CallbackError",
 ]
-
-
-class CallbackError(Exception):
-    """Raised when something went wrong with an event's callback"""
 
 
 T = TypeVar("T")
@@ -57,13 +52,7 @@ class Event(Generic[T]):
         output = False
 
         for callback in self._listeners:
-            try:
-                output |= callback(data) or True
-
-            except Exception as exc:
-                raise CallbackError(
-                    f"Error executing {self.name!r} callback {callback!r}."
-                ) from exc
+            output |= callback(data) or True
 
         return output
 
