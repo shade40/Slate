@@ -52,7 +52,7 @@ class Event(Generic[T]):
         output = False
 
         for callback in self._listeners:
-            output |= callback(data) or True
+            output |= callback(data) or False
 
         return output
 
