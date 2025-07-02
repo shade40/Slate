@@ -327,7 +327,7 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         cursor: tuple[int, int] | None = None,
         force_overwrite: bool = False,
     ) -> int:
-        """Writes a span to the screen at the given cursor position.
+        """Writes a span to the terminal's screen at the given cursor position.
 
         Args:
             data: The data to write. If passed as a string, `Span.yield_from` is used
@@ -346,6 +346,29 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
 
         changes = self._screen.write(
             data, cursor=cursor, force_overwrite=force_overwrite
+        )
+
+        return changes
+
+    def write_bulk(
+        self,
+        data: list[tuple[tuple[int, int], Iterable[Span] | str]],
+        force_overwrite: bool = False,
+    ) -> int:
+        """Writes bulked data to the terminal's screen. This function culls any
+            later-overwritten cell writes.
+
+        Args:
+            data: A list of tuples of:
+                ((pos_x, pos_y), span_iterable)
+            force_overwrite: If set, each of the characters written will be registered
+                as a change.
+
+        Returns:
+            The number of cells that have been updated as a result of the write.
+        """
+        changes = self._screen.write_bulk(
+            data, force_overwrite=force_overwrite
         )
 
         return changes

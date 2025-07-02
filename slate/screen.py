@@ -124,7 +124,7 @@ class Screen:
         self.resize((self.width, self.height), fillchar, keep_original=False)
         self.cursor = (0, 0)
 
-    def write(  # pylint: disable=too-many-branches,too-many-locals
+    def write(
         self,
         spans: Iterable[Span],
         cursor: tuple[int, int] | None = None,
@@ -143,78 +143,84 @@ class Screen:
             The number of cells that have been updated as a result of the write.
         """
 
-        x, y = cursor or self.cursor
+        return self.write_bulk([(cursor, spans)], force_overwrite=force_overwrite)
 
+    def write_bulk(
+        self,
+        data: list[tuple[tuple[int, int], Iterable[Span]]],
+        force_overwrite: bool = False,
+    ) -> int:
+        """Writes bulked data to the screen. This function culls any later-overwritten
+            cell writes.
+
+        Args:
+            data: A list of tuples of:
+                ((pos_x, pos_y), span_iterable)
+            force_overwrite: If set, each of the characters written will be registered
+                as a change.
+
+        Returns:
+            The number of cells that have been updated as a result of the write.
+        """
+
+        written_to = set()
         changes = 0
 
-        for span in spans:
-            s_foreground, s_background = span.foreground, span.background
+        for ((x, y), line) in reversed(data):
+            for span in line:
+                foreground, background = span.foreground, span.background
 
-            fg_has_alpha = s_foreground is not None and s_foreground.alpha != 1.0
-            bg_has_alpha = s_background is not None and s_background.alpha != 1.0
+                chars = span.get_characters(exclude_color=True, always_include_sequence=True)
+                chars_len = len(chars)
 
-            for i, char in enumerate(
-                span.get_characters(exclude_color=True, always_include_sequence=True)
-            ):
-                if self.width <= x or x < 0 or self.height <= y or y < 0:
-                    break
+                for i, char in enumerate(chars):
+                    if self.width <= x or x < 0 or self.height <= y or y < 0:
+                        break
 
-                if char == "\n":
-                    y += 1
-                    continue
+                    if char == "\n":
+                        y += 1
+                        continue
 
-                next_x, next_y = x + 1, y
+                    last = i == chars_len - 1
 
-                if next_x >= self.width:
-                    next_y += 1
-                    next_x = 0
+                    next_x, next_y = x + 1, y
 
-                new = (char, span.foreground, span.background)
-                current = self._cells[y][x]
+                    if next_x >= self.width:
+                        next_y += 1
+                        next_x = 0
 
-                foreground, background = s_foreground, s_background
+                    if (x, y) in written_to:
+                        x, y = next_x, next_y
+                        continue
 
-                if force_overwrite or current != new:
-                    if bg_has_alpha:
-                        top = background
-                        background = _get_blended(current[2], top)
+                    written_to.add((x, y))
+                    current = self._cells[y][x]
+                    new = (char, foreground, background)
 
-                        if span.text[i] == " ":
-                            char = current[0]
-                            foreground = _get_blended(current[1], top)
+                    if force_overwrite or current != new:
+                        self._cells[y][x] = (char, foreground, background)
 
-                    if fg_has_alpha:
-                        foreground = (
-                            foreground.blend(
-                                foreground.contrast, max(1 - foreground.alpha, 0)
-                            )
-                            if foreground is not None and background is None
-                            else _get_blended(
-                                background, foreground, is_background=False
-                            )
-                        )
+                        colors = []
+                        if foreground is not None:
+                            colors.append(foreground.ansi)
+                        if background is not None:
+                            colors.append(background.ansi)
+                        color = ";".join(colors)
 
-                    foreground = foreground or current[1]
-                    background = background or current[2]
+                        if color:
+                            char = f"\x1b[{color}m{char}"
 
-                    self._cells[y][x] = (char, foreground, background)
+                        if last:
+                            char += "\x1b[0m"
 
-                    color = (
-                        foreground.ansi + ";" if foreground is not None else ""
-                    ) + (background.ansi if background is not None else "")
+                        self._change_buffer[x, y] = char
 
-                    if color:
-                        char = f"\x1b[{color}m{char}"
+                        changes += 1
 
-                    self._change_buffer[x, y] = char
-
-                    changes += 1
-
-                x, y = next_x, next_y
-
-        self.cursor = x, y
+                    x, y = next_x, next_y
 
         return changes
+
 
     def render(self, origin: tuple[int, int] = (0, 0), redraw: bool = False) -> str:
         """Collects all buffered changes and returns them as a single string.
