@@ -9,7 +9,10 @@ from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
 
 
 def _get_blended(
-    base: Color | None, other: Color | None, is_background: bool | None = None
+    base: Color | None,
+    other: Color | None,
+    is_background: bool | None = None,
+    alpha_addition: float = 0.0
 ) -> Color | None:
     """Returns `base` blended by `other` at `other`'s alpha value."""
 
@@ -22,7 +25,7 @@ def _get_blended(
     if other is not None and base is None:
         return other
 
-    return base.blend(other, other.alpha, is_background=is_background)  # type: ignore
+    return base.blend(other, other.alpha+alpha_addition, is_background=is_background)  # type: ignore
 
 
 class ChangeBuffer:
@@ -128,6 +131,7 @@ class Screen:
         self,
         spans: Iterable[Span],
         cursor: tuple[int, int] | None = None,
+        terminal_background: Color = Color.black(),
         force_overwrite: bool = False,
     ) -> int:
         """Writes data to the screen at the given cursor position.
@@ -143,11 +147,12 @@ class Screen:
             The number of cells that have been updated as a result of the write.
         """
 
-        return self.write_bulk([(cursor, spans)], force_overwrite=force_overwrite)
+        return self.write_bulk([(cursor, spans)], force_overwrite=force_overwrite, terminal_background=terminal_background)
 
     def write_bulk(
         self,
         data: list[tuple[tuple[int, int], Iterable[Span]]],
+        terminal_background: Color = Color.black(),
         force_overwrite: bool = False,
     ) -> int:
         """Writes bulked data to the screen. This function culls any later-overwritten
@@ -163,12 +168,27 @@ class Screen:
             The number of cells that have been updated as a result of the write.
         """
 
-        written_to = set()
-        changes = 0
+        blank = (" ", None, None, False, False)
+        write_matrix = [
+            [blank] * self.width
+            for _ in range(self.height)
+        ]
 
-        for ((x, y), line) in reversed(data):
+        alpha_matrix = []
+
+        for _ in range(self.height):
+            line = []
+
+            for _ in range(self.width):
+                line.append([])
+
+            alpha_matrix.append(line)
+
+        for ((x, y), line) in data:
             for span in line:
                 foreground, background = span.foreground, span.background
+                background = background
+                bg_has_alpha = background is not None and background.alpha != 1.0
 
                 chars = span.get_characters(exclude_color=True, always_include_sequence=True)
                 chars_len = len(chars)
@@ -189,35 +209,76 @@ class Screen:
                         next_y += 1
                         next_x = 0
 
-                    if (x, y) in written_to:
-                        x, y = next_x, next_y
-                        continue
+                    final_fg = foreground
+                    final_bg = background
+                    final_char = char
 
-                    written_to.add((x, y))
-                    current = self._cells[y][x]
-                    new = (char, foreground, background)
+                    if write_matrix[y][x] is not blank and bg_has_alpha:
+                        alpha_matrix[y][x].append(background)
+                        empty = char == " "
 
-                    if force_overwrite or current != new:
-                        self._cells[y][x] = (char, foreground, background)
+                        final_fg = foreground if not empty else write_matrix[y][x][1]
+                        final_bg = write_matrix[y][x][2]
+                        final_char = char if not empty else write_matrix[y][x][0]
 
-                        colors = []
-                        if foreground is not None:
-                            colors.append(foreground.ansi)
-                        if background is not None:
-                            colors.append(background.ansi)
-                        color = ";".join(colors)
-
-                        if color:
-                            char = f"\x1b[{color}m{char}"
-
-                        if last:
-                            char += "\x1b[0m"
-
-                        self._change_buffer[x, y] = char
-
-                        changes += 1
+                    write_matrix[y][x] = (final_char, final_fg, final_bg, last, char != final_char)
 
                     x, y = next_x, next_y
+
+        changes = 0
+
+        for y, line in enumerate(write_matrix):
+            for x, cell in enumerate(line):
+                if cell is blank:
+                    continue
+
+                try:
+                    alpha_stack = alpha_matrix[y][x]
+                except:
+                    alpha_stack = {}
+
+                char, fg, bg, last, bleedthrough = cell
+                fg = fg or Color.white()
+                blent = bg
+
+                last = None
+
+                for i, color in enumerate(alpha_stack):
+                    if color == last:
+                        continue
+
+                    last = color
+
+                    blent = _get_blended(blent, color, alpha_addition=0.2)
+                    if bleedthrough:
+                        fg = _get_blended(fg, color, alpha_addition=0.2)
+
+                if blent and blent.alpha != 1.0:
+                    blent = _get_blended(terminal_background, blent)
+
+                bg = blent
+
+                if fg is not None and fg.alpha != 1.0:
+                    fg = _get_blended(fg, bg)
+
+                new = (char, fg, bg)
+
+                if new != self._cells[y][x]:
+                    self._cells[y][x] = new
+
+                    colors = []
+                    if fg is not None:
+                        colors.append(fg.ansi)
+                    if bg is not None:
+                        colors.append(bg.ansi)
+                    color = ";".join(colors)
+
+                    if color:
+                        char = f"\x1b[{color}m{char}\x1b[0m"
+
+                    self._change_buffer[x, y] = char
+
+                    changes += 1
 
         return changes
 

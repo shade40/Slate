@@ -348,7 +348,10 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
             data = Span.yield_from(data)
 
         changes = self._screen.write(
-            data, cursor=cursor, force_overwrite=force_overwrite
+            data,
+            cursor=cursor,
+            force_overwrite=force_overwrite,
+            terminal_background=self.background_color.as_background()
         )
 
         return changes
@@ -371,7 +374,9 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
             The number of cells that have been updated as a result of the write.
         """
         changes = self._screen.write_bulk(
-            data, force_overwrite=force_overwrite
+            data,
+            force_overwrite=force_overwrite,
+            terminal_background=self.background_color.as_background()
         )
 
         return changes
