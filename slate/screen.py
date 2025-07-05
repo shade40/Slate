@@ -241,7 +241,7 @@ class Screen:
                 fg = fg or Color.white()
                 blent = bg
 
-                last = None
+                last = bg
 
                 for i, color in enumerate(alpha_stack):
                     if color == last:
