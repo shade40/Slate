@@ -9,6 +9,7 @@ import os
 import re
 import signal
 import sys
+import threading
 from codecs import getincrementaldecoder
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -238,13 +239,23 @@ def get_default_color(
     """
 
     if not sys.stdin.isatty():
+        print("Not tty")
         return DEFAULT_COLOR_DEFAULTS[layer]
+ 
+    resp = [""]
+
+    def _read():
+        resp[0] = getch()
+
+    t = threading.Thread(target=_read)
+    t.start()
 
     stream.flush()
-    stream.write(f"\x1b]{layer};?\007")
+    stream.write(f"\x1b]{layer};?\x1b\\")
     stream.flush()
+    t.join()
 
-    reply = str(getch_timeout(0.01, default=""))
+    reply = str(resp[0])
 
     mtch = RE_PALETTE_REPLY.match(reply)
     if mtch is None:

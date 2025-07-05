@@ -88,6 +88,9 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
         self.on_resize += _on_resize
         self.on_color_space_set = Event("color space set")
 
+        _ = self.background_color
+        _ = self.foreground_color
+
     @property
     def color_space(self) -> ColorSpace:
         """Returns the best color space available on the system.
