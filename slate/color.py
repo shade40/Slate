@@ -429,9 +429,9 @@ class Color:  # pylint: disable = too-many-instance-attributes
 
         return Color(
             (
-                int(red1 + (red2 - red1) * alpha),
-                int(green1 + (green2 - green1) * alpha),
-                int(blue1 + (blue2 - blue1) * alpha),
+                max(int(red1 + (red2 - red1) * alpha), 0),
+                max(int(green1 + (green2 - green1) * alpha), 0),
+                max(int(blue1 + (blue2 - blue1) * alpha), 0),
             ),
             is_background=is_background,
         )

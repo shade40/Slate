@@ -56,10 +56,11 @@ class Event(Generic[T]):
 
         return output
 
-    def append(self, callback: Callable[[T], bool]) -> None:
+    def append(self, callback: Callable[[T], bool]) -> Callable[[T], bool]:
         """Adds a new listener."""
 
         self._listeners.append(callback)
+        return callback
 
     def clear(self) -> None:
         """Removes all listeners from th event."""

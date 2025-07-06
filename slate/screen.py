@@ -4,6 +4,8 @@ from __future__ import annotations
 
 from typing import Iterable
 
+from slate.core import RE_ANSI
+
 from .color import Color
 from .span import Span, SVG_CHAR_WIDTH, SVG_CHAR_HEIGHT
 
@@ -168,7 +170,7 @@ class Screen:
             The number of cells that have been updated as a result of the write.
         """
 
-        blank = (" ", None, None, False, False)
+        blank = (" ", None, terminal_background, False, False)
         write_matrix = [
             [blank] * self.width
             for _ in range(self.height)
@@ -215,7 +217,7 @@ class Screen:
 
                     if write_matrix[y][x] is not blank and bg_has_alpha:
                         alpha_matrix[y][x].append(background)
-                        empty = char == " "
+                        empty = RE_ANSI.sub("", char).strip() == ""
 
                         final_fg = foreground if not empty else write_matrix[y][x][1]
                         final_bg = write_matrix[y][x][2]
