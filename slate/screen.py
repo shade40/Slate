@@ -251,12 +251,12 @@ class Screen:
 
                     last = color
 
-                    blent = _get_blended(blent, color, alpha_addition=0.2)
+                    blent = _get_blended(blent, color, alpha_addition=0.1)
                     if bleedthrough:
-                        fg = _get_blended(fg, color, alpha_addition=0.2)
+                        fg = _get_blended(fg, color, alpha_addition=0.1)
 
                 if blent and blent.alpha != 1.0:
-                    blent = _get_blended(terminal_background, blent)
+                    blent = _get_blended(terminal_background, blent, alpha_addition=0.1)
 
                 bg = blent
 
