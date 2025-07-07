@@ -217,7 +217,7 @@ class Screen:
 
                     if write_matrix[y][x] is not blank and bg_has_alpha:
                         alpha_matrix[y][x].append(background)
-                        empty = RE_ANSI.sub("", char).strip() == ""
+                        empty = RE_ANSI.sub("", char).strip() == "" and not span.opaque
 
                         final_fg = foreground if not empty else write_matrix[y][x][1]
                         final_bg = write_matrix[y][x][2]

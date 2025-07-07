@@ -21,6 +21,7 @@ SETTERS = {
     "invert": "7",
     "conceal": "8",
     "strike": "9",
+    "opaque": "99",
 }
 
 SETTERS_TO_STYLES = {value: key for key, value in SETTERS.items()}
@@ -79,6 +80,7 @@ class SpanConfig(TypedDict):
     invert: bool
     conceal: bool
     strike: bool
+    opaque: bool
     foreground: Color | None
     background: Color | None
     hyperlink: str
@@ -234,6 +236,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
     invert: bool = False
     conceal: bool = False
     strike: bool = False
+    opaque: bool = False
     reset_after: bool = True
 
     _computed: str = field(init=False)
@@ -331,6 +334,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
             "invert": self.invert,
             "conceal": self.conceal,
             "strike": self.strike,
+            "opaque": self.opaque,
             "foreground": self.foreground,
             "background": self.background,
             "hyperlink": self.hyperlink,
