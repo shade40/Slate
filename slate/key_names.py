@@ -1,6 +1,7 @@
 """Dictionaries of key translations, used by `getch` and friends."""
 
 POSIX_KEY_NAMES = {  # pylint: disable=cyclic-import
+    "\x1b": ("esc", "escape"),
     "\x1b[A": ("up", "arrow-up"),
     "\x1b[B": ("down", "arrow-down"),
     "\x1b[C": ("right", "arrow-right"),
