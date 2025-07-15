@@ -8,7 +8,7 @@ def run_getch(raw: bool) -> None:
     print(Span("Waiting for input...", dim=True), end=" ", flush=True)
     key = getch(raw=raw)
 
-    print(" | ".join(map(lambda k: repr(k) if len(k) == 1 else k, key.possible_values)))
+    print(" | ".join(map(lambda k: repr(k) if raw or len(k) == 1 else k, key.possible_values)))
 
 def run_size() -> None:
     print(" x ".join(map(str, terminal.size)))
