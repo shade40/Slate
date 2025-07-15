@@ -39,6 +39,7 @@ Source = "https://github.com/shade40/slate"
 
 [project.scripts]
 slate = "slate.__main__:main"
+sh40-slate = "slate.__main__:main"
 
 [tool.hatch.version]
 path = "slate/__about__.py"

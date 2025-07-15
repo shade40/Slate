@@ -63,7 +63,7 @@ def run_debug() -> None:
 def main() -> None:
     """The main entrypoint."""
 
-    parser = ArgumentParser(description="Small tools for the terminal.")
+    parser = ArgumentParser("slate", description="Small tools for the terminal.")
 
     subs = parser.add_subparsers(required=True)
 
