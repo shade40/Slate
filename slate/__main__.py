@@ -58,7 +58,7 @@ def run_debug() -> None:
 
         buff += "\n"
 
-    print(f"\n{buff}")
+    print(buff.lstrip("\n"))
 
 
 def main() -> None:
@@ -80,7 +80,9 @@ def main() -> None:
     opts = vars(args)
     del opts["func"]
 
+    print()
     command(**vars(args))
+    print()
 
 
 if __name__ == "__main__":
