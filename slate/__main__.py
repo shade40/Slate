@@ -59,7 +59,7 @@ def run_debug() -> None:
 
         buff += "\n"
 
-    print(buff.lstrip("\n"))
+    print(buff.lstrip("\n"), end="", flush=True)
 
 
 def main() -> None:
