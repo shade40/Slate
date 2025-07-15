@@ -4,10 +4,11 @@ from argparse import ArgumentParser
 from . import getch, Span, terminal, color, Color
 from .__about__ import __version__
 
-def run_getch() -> None:
+def run_getch(raw: bool) -> None:
     print(Span("Waiting for input...", dim=True), end=" ", flush=True)
-    key = getch()
-    print(" | ".join(map(repr, key.possible_values)))
+    key = getch(raw=raw)
+
+    print(" | ".join(map(lambda k: repr(k) if len(k) == 1 else k, key.possible_values)))
 
 def run_size() -> None:
     print(" x ".join(map(str, terminal.size)))
@@ -69,7 +70,10 @@ def main() -> None:
 
     subs = parser.add_subparsers(required=True)
 
-    subs.add_parser("getch").set_defaults(func=run_getch)
+    getch_command = subs.add_parser("getch")
+    getch_command.set_defaults(func=run_getch)
+    getch_command.add_argument("--raw", action="store_true")
+
     subs.add_parser("size").set_defaults(func=run_size)
     subs.add_parser("debug").set_defaults(func=run_debug)
 
