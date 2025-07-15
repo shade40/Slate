@@ -37,6 +37,9 @@ Documentation = "https://github.com/shade40/slate#readme"
 Issues = "https://github.com/shade40/slate/issues"
 Source = "https://github.com/shade40/slate"
 
+[project.scripts]
+slate = "slate.__main__:main"
+
 [tool.hatch.version]
 path = "slate/__about__.py"
 
