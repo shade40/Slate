@@ -2,6 +2,7 @@ import os
 from argparse import ArgumentParser
 
 from . import getch, Span, terminal, color, Color
+from .__about__ import __version__
 
 def run_getch() -> None:
     print(Span("Waiting for input...", dim=True), end=" ", flush=True)
@@ -64,6 +65,7 @@ def main() -> None:
     """The main entrypoint."""
 
     parser = ArgumentParser("slate", description="Small tools for the terminal.")
+    parser.add_argument("-v", "--version", action="version", version=__version__)
 
     subs = parser.add_subparsers(required=True)
 
@@ -72,6 +74,7 @@ def main() -> None:
     subs.add_parser("debug").set_defaults(func=run_debug)
 
     args = parser.parse_args()
+
     command = args.func
 
     opts = vars(args)
