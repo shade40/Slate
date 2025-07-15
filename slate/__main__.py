@@ -7,7 +7,7 @@ from .__about__ import __version__
 def run_getch() -> None:
     print(Span("Waiting for input...", dim=True), end=" ", flush=True)
     key = getch()
-    print("|".join(key.possible_values))
+    print(" | ".join(map(repr, key.possible_values)))
 
 def run_size() -> None:
     print(" x ".join(map(str, terminal.size)))
