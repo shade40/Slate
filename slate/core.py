@@ -3,6 +3,9 @@
 Most of these are best used from the `Terminal` object.
 """
 
+# TODO: Kitty Keyboard Protocol
+# https://sw.kovidgoyal.net/kitty/keyboard-protocol/
+
 from __future__ import annotations
 
 import os
@@ -239,7 +242,6 @@ def get_default_color(
     """
 
     if not sys.stdin.isatty():
-        print("Not tty")
         return DEFAULT_COLOR_DEFAULTS[layer]
  
     resp = [""]
@@ -565,6 +567,9 @@ def set_echo(value: bool = True) -> None:  # no-cov
 
     Currently not supported on windows.
     """
+
+    if not sys.stdin.isatty():
+        return
 
     # TODO: Figure out windows support.
     if os.name == "nt":

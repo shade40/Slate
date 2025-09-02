@@ -27,7 +27,10 @@ def _get_blended(
     if other is not None and base is None:
         return other
 
-    return base.blend(other, other.alpha+alpha_addition, is_background=is_background)  # type: ignore
+    if other.alpha == 1.0:
+        return other
+
+    return base.blend(other, min(other.alpha+alpha_addition, 1.0), is_background=is_background)  # type: ignore
 
 
 class ChangeBuffer:
@@ -76,6 +79,7 @@ class Screen:
         self._change_buffer = ChangeBuffer()
 
         self.cursor: tuple[int, int] = cursor
+        self._scrollback_offset = 0
 
         self.resize((width, height), fillchar)
 
@@ -187,13 +191,25 @@ class Screen:
             alpha_matrix.append(line)
 
         for ((x, y), line) in data:
-            for span in line:
+            line = list(line)
+            last = len(line) - 1
+
+            for i, span in enumerate(line):
                 foreground, background = span.foreground, span.background
                 background = background
                 bg_has_alpha = background is not None and background.alpha != 1.0
 
                 chars = span.get_characters(exclude_color=True, always_include_sequence=True)
                 chars_len = len(chars)
+
+                if i == last and y - self._scrollback_offset > self.height - 1:
+                    self._scrollback_offset = y - self.height + 1
+                    chars[-1] = chars[-1] + "\n" 
+
+                    self._cells.pop(0)
+                    self._cells.append([("", None, None)] * self.width)
+
+                y -= self._scrollback_offset
 
                 for i, char in enumerate(chars):
                     if self.width <= x or x < 0 or self.height <= y or y < 0:
@@ -263,6 +279,9 @@ class Screen:
                 if fg is not None and fg.alpha != 1.0:
                     fg = _get_blended(fg, bg)
 
+                has_newline = char.endswith("\n")
+                char = char.rstrip("\n")
+
                 new = (char, fg, bg)
 
                 if new != self._cells[y][x]:
@@ -278,7 +297,7 @@ class Screen:
                     if color:
                         char = f"\x1b[{color}m{char}\x1b[0m"
 
-                    self._change_buffer[x, y] = char
+                    self._change_buffer[x, y] = char + ("\n" if has_newline else "")
 
                     changes += 1
 
@@ -385,7 +404,7 @@ class Screen:
 
         i = 0
         for row in self._cells:
-            for span in Span.group([span for span, *_ in row]):
+            for span in Span.group(row):
                 if previous_attrs != span.attrs:
                     i += 1
 

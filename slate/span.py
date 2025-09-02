@@ -375,7 +375,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         return None
 
     @classmethod
-    def group(cls, line: list[str]) -> Iterable[Span]:
+    def group(cls, line: list[tuple[str, Color | None, Color | None]]) -> Iterable[Span]:
         """Groups similar characters next to eachother into spans.
 
         Two characters are similar if their styles match.
@@ -385,7 +385,7 @@ class Span:  # pylint: disable=too-many-instance-attributes
         attrs = EMPTY_SPAN.attrs | {"text": ""}
         prev_str = ""
 
-        for char in line:
+        for char, fg, bg in line:
             # If the previous is completely equal skip parsing to a span
             if str(char) == prev_str:
                 group = group.mutate(text=group.text + char[-1])
@@ -395,6 +395,8 @@ class Span:  # pylint: disable=too-many-instance-attributes
 
             if span is None:
                 span = EMPTY_SPAN
+
+            span = span.mutate(foreground=fg, background=bg)
 
             # Ignore text part of spans
             new_attrs = span.attrs | {"text": ""}

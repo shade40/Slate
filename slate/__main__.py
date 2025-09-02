@@ -15,12 +15,12 @@ def run_size() -> None:
 
 def run_debug() -> None:
     rows = [
-        ("Environment:", ""),
-        ("$TERM", os.getenv("TERM", "-")),
-        ("$COLORTERM", os.getenv("COLORTERM", "-")),
-        ("$NO_COLOR", os.getenv("NO_COLOR", "-")),
-        ("$SLATE_COLORSYS", os.getenv("SLATE_COLORSYS", "-")),
-        ("Terminal state:", ""),
+        ("Environment:", None),
+        ("$TERM", os.getenv("TERM") or "-"),
+        ("$COLORTERM", os.getenv("COLORTERM") or "-"),
+        ("$NO_COLOR", os.getenv("NO_COLOR") or "-"),
+        ("$SLATE_COLORSYS", os.getenv("SLATE_COLORSYS") or "-"),
+        ("Terminal state:", None),
         ("size", "x".join(map(str, terminal.size))),
         ("colorspace", str(terminal.color_space)),
         ("synchronized update support", str(terminal.supports_synchronized_update)),
@@ -29,12 +29,12 @@ def run_debug() -> None:
     ]
     
     max_left = max(len(row[0]) for row in rows) + 3
-    max_right = max(len(row[1]) for row in rows) + 3
+    max_right = max(len(row[1] or "") for row in rows) + 3
 
     buff = ""
 
     for left, right in rows:
-        if right == "":
+        if right is None:
             if buff:
                 buff += "\n"
 
@@ -59,7 +59,42 @@ def run_debug() -> None:
 
         buff += "\n"
 
-    print(buff.lstrip("\n"), end="", flush=True)
+    buff = buff[:-1]
+
+    width = max_left + max_right
+    step = 1 / width
+    color_line = ""
+
+    for i in range(width):
+        c = Color.from_hex("#0000ff").lighten(2).hue_shift(step * i).as_background()
+        color_line += str(Span(" ", background=c))
+
+    styles = [
+        Span("std"),
+        Span("bold", bold=True),
+        Span("italic", italic=True),
+        Span("dim", dim=True),
+        Span("underline", underline=True),
+        Span("blink", blink=True),
+        Span("invert", invert=True),
+        Span("strike", strike=True),
+    ]
+
+    style_line = ""
+    used = 0
+
+    for span in styles:
+        if used + len(span) > width:
+            style_line += "\n"
+            used = 0
+
+        if len(style_line) and used:
+            style_line += " "
+
+        style_line += str(span)
+        used += len(span) + 1
+
+    print(color_line, "", buff, "", style_line, sep="\n")
 
 
 def main() -> None:

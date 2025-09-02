@@ -404,7 +404,12 @@ class Terminal:  # pylint: disable=too-many-public-methods, too-many-instance-at
                 writing changes.
         """
 
-        self.stream.write(self._screen.render(origin=self.origin, redraw=redraw))
+        ansi = self._screen.render(origin=self.origin, redraw=redraw)
+
+        with open("screen.txt", "w") as f:
+            f.write(ansi)
+
+        self.stream.write(ansi)
         self.stream.flush()
 
     def bell(self) -> None:  # no-cov
